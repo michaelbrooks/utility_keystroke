@@ -217,6 +217,11 @@ def error():
 
 def dash():
     return dict(theme='black')
+def amazon_health():
+    rate = int((1.0-turk.error_rate()) * 10)
+    if rate <= 8:
+        rate = '<span style="font-size: 300px; font-weight:bold; color: #f00;">%s</span>' % rate
+    return rate
 def add_log_blanks():
     debug('')
     debug('')
