@@ -4,3 +4,5 @@
 /static
 /databases
 /backups
+/web2py/applications/utility/databases/*.table
+/web2py/applications/utility/databases/*.log
