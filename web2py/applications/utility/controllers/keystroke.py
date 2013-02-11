@@ -55,6 +55,7 @@ if session.flashType:
     response.flashType = session.flashType
     session.flashType = None
 
+response.session = session
 response.title = "Authentication Research Study"
 
 verificationAnswers = [
@@ -133,58 +134,104 @@ hit_session = None
 def index():
 
     if request.preview:
-        return dict(messages=messages)
+        return welcome(None)
+    
+    # Make sure this is the only HIT that the user is progressing through
+    if not block_multiple(None):
+        # We're blocked, so show the welcome screen in the background
+        response.view = 'keystroke/index.html'
+        return welcome(None)
+    
+    # At this point we assume that the user is really doing this HIT
+    # In other words, hit_session is set up correctly
+    if 'next_step' not in hit_session:
         
-    '''Shows the welcome information, study description, etc.'''
-    block_multiple(False)
+        hit_count = hits_done(request.workerid, request.study)
     
-    if hit_session and hit_session.phase != 'index':
-        redirect(URL(f=hit_session.phase, vars=request.get_vars))
+        # Check the GET variables for debugging
+        if not request.live and ("hits_completed" in request.vars):
+            hit_count = int(request.vars.hits_completed)
+        
+        if hit_count == 0:
+            # No next step set and no hits done, we show the welcome message
+            hit_session.next_step = 'welcome'
+            response.view = 'keystroke/index.html'
+            return welcome(None)
+        else:
+            # No next step set and at least 1 hit done, we go to verification
+            hit_session.next_step = 'verify'
+            response.view = 'keystroke/verify.html'
+            return verify(None)
     
-    #If the user has already completed a hit, they skip this part
-    if (hits_done(request.workerid, request.study) >= 1 or (not request.live and request.vars.hits_completed >= 1)):
-        #If testing, use the hits_completed parameter
-        if hit_session:
-            hit_session.phase = 'verify'
-            hit_session.attempts = 0
-        redirect(URL(f='verify', vars=request.get_vars))
+    if hit_session.next_step == 'welcome':
+        # Show the welcome screen
+        response.view = 'keystroke/index.html'
+        return welcome(None)
+    if hit_session.next_step == 'thanks':
+        # We're done. This should probably not happen on MTurk.
+        response.view = 'keystroke/thanks.html'
+        return thanks(None)
+    if hit_session.next_step == 'enroll':
+        # We're doing enrollment next
+        response.view = 'keystroke/record.html'
+        return enroll(None)
+    if hit_session.next_step == 'post_enroll':
+        # We've done enrollment and going on to post-enrollment questions
+        response.view = 'keystroke/enrolled.html'
+        return post_enroll(None)
+    if hit_session.next_step == 'verify':
+        # We're going to attempt authentication
+        response.view = 'keystroke/verify.html'
+        return verify(None)
+    if hit_session.next_step == 'mood_test':
+        # We've authenticated, so now we are going to do the task
+        response.view = 'keystroke/verified.html'
+        return mood_test(None)
+    if hit_session.next_step == 'free_write':
+        # We've done the mood test, now time for the free writing
+        response.view = 'keystroke/free_write.html'
+        return free_write(None)
+    if hit_session.next_step == 'association':
+        # We've done the free writing, time for the word association
+        response.view = 'keystroke/association.html'
+        return association(None)
+
+# Display a welcome message or continue on to enrollment
+def welcome(param):
     
-    # we start off in the record phase
-    if hit_session:
-        hit_session.phase = 'record'
+    if request.preview:
+        # don't bother to do much on preview, just show the screen
+        return dict(messages=messages)
+    
+    # If the user has clicked the "Get Started" button, then
+    # the GET variable "enroll" will be set.
+    if request.vars.enroll:
+        hit_session.next_step = 'enroll'
+        
+        # remove the enroll parameter
+        del request.get_vars['enroll']
+        
+        # Go home and try again
+        redirect(URL(f='index', vars=request.get_vars))
     
     response.isEnrollment = True
     request.enrollPrice = ENROLL_PRICE
     request.verifyPrice = request.price;
     
     return dict(messages=messages)
-    
-##
-## The following actions are used during the enrollment HIT
-##
 
-def record():
-    '''Shows the record form and processes recordings'''
-    
-    #No visiting this page during preview
-    if request.preview:
-        record_action('routing: record() during preview')
-        redirect(URL(f='index', vars=request.get_vars))
-    
-    block_multiple(True)
+# Display the recording screen for enrollment
+# until enough recordings are collected, then go on to the survey.
+def enroll(param):
     
     #Initialize successfulRecordings to 0 if not set yet
-    if not hit_session.successfulRecordings:
+    if 'successfulRecordings' not in hit_session:
         hit_session.successfulRecordings = 0
 
-    #If they're already enrolled go on to the enrolled action
-    if hit_session.phase != 'record':
-        record_action('routing: record() when in ' + hit_session.phase)
-        redirect(URL(f=hit_session.phase, vars=request.get_vars))
-    
+    # set up the auth form
     form = auth_form(messages['authInstructions'], KEYPHRASE)
     
-    #validate the recording
+    #validate the recording if it is set
     if form.process(onsuccess=None, onfailure=None).accepted and validate(request.vars.typing, request.vars.text, form):
         record_action('user recorded', request.vars.typing)
         response.flash = get_message('recordSuccess')
@@ -196,19 +243,22 @@ def record():
     #They've submitted all required recordings
     if hit_session.successfulRecordings >= REQUIRED_RECORDINGS:
         record_action('recordings completed')
-        hit_session.phase = 'enrolled'
-        hit_session.invalid_verifs = 0
+        hit_session.next_step = 'post_enroll'
+        
         session.flash = get_message('recordAllDone')
         session.flashType = "success"
-        redirect(URL(f='enrolled', vars=request.get_vars))
+        
+        # Go home and try again
+        redirect(URL(f='index', vars=request.get_vars))
 
     response.isEnrollment = True
     request.enrollPrice = ENROLL_PRICE
     request.verifyPrice = request.price;
     
+    # If they've submitted some recordings successfully already, scroll down
     if hit_session.successfulRecordings > 0:
         request.scrollDown = True
-        
+    
     result = dict()
     result['keyphrase'] = KEYPHRASE
     result['requiredRecordings'] = REQUIRED_RECORDINGS
@@ -217,26 +267,214 @@ def record():
     result['messages'] = messages
     return result
 
-def enrolled():
-    '''
-    All required sessions were recorded.
-    Shows a brief enrollment questionnaire.
-    '''
+# Show a post-enrollment questionnaire
+# Mark the HIT done when submitted.
+def post_enroll(param):
     
-    #No visiting this page during preview
-    if request.preview:
-        record_action('routing: enrolled() during preview')
+    # Set this to 0 if not yet set
+    if 'invalid_verifs' not in hit_session:
+        hit_session.invalid_verifs = 0
+    
+    form = get_post_enroll_form(param)
+    
+    if form.process(onfailure="").accepted:
+    
+        # save the form answers
+        record_entry_survey(request.post_vars)
+        
+        # complete the HIT
+        del session[session.current_hit]
+        session.current_hit = None
+        
+        # set the price to the enrollment price
+        alter_price(ENROLL_PRICE)
+        hit_finished()
+        
+        # Prepare to give thanks
+        session.flash = "The HIT has been submitted."
+        session.flashType = "success"
+        session.next_step = 'thanks'
+        
+        # Reset the verification failure counter
+        hit_session.invalid_verifs = 0
+        
+        # Go home and try again, but probably MTurk will takeover now
         redirect(URL(f='index', vars=request.get_vars))
+        
+    elif form.errors:
+        if 'verify' in form.errors:
+            # there was a verification error
+            hit_session.invalid_verifs += 1
+        
+        record_action('invalid: enrolled', form.errors)
+        
+    response.isEnrollment = True
+    request.enrollPrice = ENROLL_PRICE
+    request.verifyPrice = request.price;
     
-    block_multiple(True)
+    return dict(form=form, messages=messages)
+
+# Show the authentication form
+# Advance to surveys if successful
+def verify(param): 
+
+    # Initialize the attempt counter
+    if 'attempts' not in hit_session:
+        hit_session.attempts = 0
+
+    form = auth_form(messages['authInstructions'], KEYPHRASE)
     
-    hit_session.successfulRecordings = 0
+    if form.process(onsuccess=None, onfailure=None).accepted and validate(request.vars.typing, request.vars.text, form):
+        #validate the recording (the user XYZ is a dummy user here)
+        if authorize("XYZ"):
+            #if they were authenticated, go on to questionnaire
+            record_action('user authorized', request.vars.typing)
+            hit_session.next_step = 'mood_test'
+            session.flash = get_message('verifySuccess')
+            session.flashType = "success"
+            # Go home and try again
+            redirect(URL(f='index', vars=request.get_vars))
+        else:
+            # Not authorized so show a denied error
+            record_action('user denied', request.vars.typing)
+            form.errors = dict(text=get_message('verifyError'))
+            
+    elif form.errors:
+        # Invalid verification attempt
+        record_action('invalid: verify', form.errors)
+
+    # Increase the count of verification attempts
+    hit_session.attempts += 1
+        
+    return dict(keyphrase=KEYPHRASE, form=form, messages=messages)
+
+# Show the mood test and advance to the
+# free writing when done.
+# NOTE: For now just show the old questions
+def mood_test(param):
+
+    # Set this to 0 if not yet set
+    if 'invalid_verifs' not in hit_session:
+        hit_session.invalid_verifs = 0
+
+    form = get_mood_form(param);
     
-    #If they're not enrolled, go back to record
-    if hit_session.phase != 'enrolled':
-        record_action('routing: enrolled() when in ' + hit_session.phase)
-        redirect(URL(f=hit_session.phase, vars=request.get_vars))
+    if form.process(onfailure="").accepted:
+        # save the questionnaire
+        record_post_survey(request.post_vars)
+        
+        # complete the HIT
+        del session[session.current_hit]
+        session.current_hit = None
+        hit_finished()
+        
+        # Prepare to give thanks
+        session.flash = "The HIT has been submitted."
+        session.flashType = "success"
+        hit_session.next_step = 'thanks'
+        
+        # Reset the verification failure counter
+        hit_session.invalid_verifs = 0
+        
+        # Go home and try again
+        redirect(URL(f='index', vars=request.get_vars))
+        
+    elif form.errors:
+        if 'verify' in form.errors:
+            # The human test was wrong
+            hit_session.invalid_verifs += 1
+        record_action('invalid: verified', form.errors)
+        
+    return dict(form=form, messages=messages)
+
+# Display a thank you message
+def thanks(param):
     
+    return dict(messages=messages)
+    
+##
+## These are private functions
+##
+
+def initialize_hit(hitid):
+    log_action('initialized hit')
+    session.current_hit = hitid
+    session[hitid] = gluon.storage.Storage()
+    session.start_time = time.time()
+
+# Checks if the user is already doing a different HIT
+# If so, shows the warning screen
+# If not, returns True
+def block_multiple(parameter):
+    global hit_session
+    
+    hit = request.hitid
+    
+    if not session.current_hit:
+        # we are not doing a hit currently
+        initialize_hit(hit)
+        hit_session = session[session.current_hit]
+        
+        # We're good to go
+        return True
+        
+    elif session.current_hit != hit:
+        # they are starting a new hit while doing another hit
+        if request.vars.unblock:
+            # they've said they don't care, they want to do this one anyway
+            record_action('unblocked')
+            initialize_hit(hit)
+            hit_session = session[session.current_hit]
+
+            # Remove the unblock parameter
+            del request.get_vars['unblock']
+            
+            # We're good to go, but have to redirect to remove the unblock parameter
+            redirect(URL(f='index', vars=request.get_vars))
+        else:
+            # They haven't unblocked us, so we have to stay here
+            record_action('blocked')
+            response.block = True
+            
+            # We return False beause we're blocked
+            return False
+    else:
+        # We're continuing an old HIT
+        hit_session = session[session.current_hit]
+        #And we're good to go
+        return True
+
+# Get the mood test questionnaire
+def get_mood_form(param):
+    frustrationInputs = [
+        LABEL(INPUT(_type="radio", _name="frustration", _value='1', _id="frustration-0", requires=IS_NOT_EMPTY(error_message='You must rate your frustration')),
+            'Not at all frustrating',
+            _for="frustration-0", _class="radio"),
+        LABEL(INPUT(_type="radio", _name="frustration", _value='2', _id="frustration-1"),
+            'Slightly frustrating', 
+            _for="frustration-1", _class="radio"),
+        LABEL(INPUT(_type="radio", _name="frustration", _value='3', _id="frustration-2"),
+            'Moderately frustrating', 
+            _for="frustration-2", _class="radio"),
+        LABEL(INPUT(_type="radio", _name="frustration", _value='4', _id="frustration-3"),
+            'Very frustrating', 
+            _for="frustration-3", _class="radio"),
+        LABEL(INPUT(_type="radio", _name="frustration", _value='5', _id="frustration-4"),
+            'Extremely frustrating', 
+            _for="frustration-4", _class="radio")
+    ]
+    frustrationItem = form_item("How frustrating was typing the phrase to verify your identity? (required)", frustrationInputs)
+    
+    verificationItem = verify_item('verify')
+    
+    submitButton = submit_button('submit')
+    
+    form = FORM(frustrationItem, verificationItem, submitButton, _id="verified-form", _class="questions well")
+    
+    return form
+            
+# Get the post enrollment questionnaire
+def get_post_enroll_form(param):
     ageItem = form_item("What is your age, in years? (required)", 
         INPUT(_type="text",_name="age",_autocomplete="off", requires=[
             IS_NOT_EMPTY(error_message="Age is required"), 
@@ -334,183 +572,11 @@ def enrolled():
     verificationItem = verify_item('verify')
     
     submitButton = submit_button('submit')
+    
     form = FORM(ageItem, genderItem, occupationItem, incomeItem, biometricItem, verificationItem, submitButton, _id="enrolled-form", _class="questions well")
     
-    if form.process(onfailure="").accepted:
-        
-        # save the form answers
-        record_entry_survey(request.post_vars)
-        
-        # complete the HIT
-        del session[session.current_hit]
-        session.current_hit = None
-        # set the price to the enrollment price
-        alter_price(ENROLL_PRICE)
-        hit_finished()
-        
-        session.flash = "The HIT has been submitted."
-        session.flashType = "success"
-        redirect(URL(f='thanks', vars=request.get_vars))
-    elif form.errors:
-        if 'verify' in form.errors:
-            hit_session.invalid_verifs += 1
-        record_action('invalid: enrolled', form.errors)
-        
-    response.isEnrollment = True
-    request.enrollPrice = ENROLL_PRICE
-    request.verifyPrice = request.price;
-    
-    return dict(form=form, messages=messages)
-
-##
-## The following actions are used during the authentication HITs
-##
-
-def verify(): 
-
-    #No visiting this page during preview
-    if request.preview:
-        record_action('routing: verify() during preview')
-        redirect(URL(f='index', vars=request.get_vars))
-
-    block_multiple(False)
-
-    if hit_session and hit_session.phase != 'verify':
-        record_action('routing: verify() when in ' + hit_session.phase)
-        redirect(URL(f=hit_session.phase, vars=request.get_vars))
-
-    form = auth_form(messages['authInstructions'], KEYPHRASE)
-    
-    if hit_session and form.process(onsuccess=None, onfailure=None).accepted and validate(request.vars.typing, request.vars.text, form):
-        #validate the recording
-        if authorize("XYZ"):
-            #if they were authenticated, go on to questionnaire
-            record_action('user authorized', request.vars.typing)
-            hit_session.phase = 'verified'
-            hit_session.invalid_verifs = 0
-            session.flash = get_message('verifySuccess')
-            session.flashType = "success"
-            redirect(URL(f='verified', vars=request.get_vars))
-        else:
-            record_action('user denied', request.vars.typing)
-            form.errors = dict(text=get_message('verifyError'))
-    elif form.errors:
-        record_action('invalid: verify', form.errors)
-
-    if hit_session:
-        hit_session.attempts += 1
-        
-    return dict(keyphrase=KEYPHRASE, form=form, messages=messages)
-
-def verified():
-    #No visiting this page during preview
-    if request.preview:
-        record_action('routing: verified() during preview')
-        redirect(URL(f='index', vars=request.get_vars))
-
-    block_multiple(True)
-        
-    if hit_session.phase != 'verified':
-        record_action('routing: verified() when in ' + hit_session.phase)
-        redirect(URL(f=hit_session.phase, vars=request.get_vars))
-    
-    frustrationInputs = [
-        LABEL(INPUT(_type="radio", _name="frustration", _value='1', _id="frustration-0", requires=IS_NOT_EMPTY(error_message='You must rate your frustration')),
-            'Not at all frustrating',
-            _for="frustration-0", _class="radio"),
-        LABEL(INPUT(_type="radio", _name="frustration", _value='2', _id="frustration-1"),
-            'Slightly frustrating', 
-            _for="frustration-1", _class="radio"),
-        LABEL(INPUT(_type="radio", _name="frustration", _value='3', _id="frustration-2"),
-            'Moderately frustrating', 
-            _for="frustration-2", _class="radio"),
-        LABEL(INPUT(_type="radio", _name="frustration", _value='4', _id="frustration-3"),
-            'Very frustrating', 
-            _for="frustration-3", _class="radio"),
-        LABEL(INPUT(_type="radio", _name="frustration", _value='5', _id="frustration-4"),
-            'Extremely frustrating', 
-            _for="frustration-4", _class="radio")
-    ]
-    frustrationItem = form_item("How frustrating was typing the phrase to verify your identity? (required)", frustrationInputs)
-    
-    verificationItem = verify_item('verify')
-    
-    submitButton = submit_button('submit')
-    form = FORM(frustrationItem, verificationItem, submitButton, _id="verified-form", _class="questions well")
-    
-    if form.process(onfailure="").accepted:
-        # save the questionnaire
-        record_post_survey(request.post_vars)
-        
-        # complete the HIT
-        del session[session.current_hit]
-        session.current_hit = None
-        hit_finished()
-        
-        session.flash = "The HIT has been submitted."
-        session.flashType = "success"
-        redirect(URL(f='thanks', vars=request.get_vars))
-    elif form.errors:
-        if 'verify' in form.errors:
-            hit_session.invalid_verifs += 1
-        record_action('invalid: verified', form.errors)
-        
-    return dict(form=form, messages=messages)
-
-def thanks():
-    '''Display a thank you message'''
-    
-    #No visiting this page during preview
-    if request.preview:
-        record_action('routing: thanks() during preview')
-        redirect(URL(f='index', vars=request.get_vars))
-    
-    return dict(messages=messages)
-    
-##
-## These are private functions
-##
-
-def initialize_hit(hitid):
-    log_action('initialized hit')
-    session.current_hit = hitid
-    session[hitid] = gluon.storage.Storage()
-    session[hitid].phase = 'index'
-    session.start_time = time.time()
-
-def block_multiple(redirectToIndex):
-    global hit_session
-    
-    hit = request.hitid
-    if session.current_hit and session.current_hit != hit:
-        # they are starting a new hit
-        if request.vars.unblock:
-            # they've said they don't care, they want to do this one anyway
-            record_action('unblocked')
-            initialize_hit(hit)
-            hit_session = session[hit]
-
-            rvars = request.get_vars
-            del rvars['unblock']
-            redirect(URL(f='index', vars=rvars))
-        else:
-            # we need to either go back to index to show the dialog
-            # or if we aren't going back, show it now
-            if redirectToIndex:
-                redirect(URL(f='index', vars=request.get_vars))
-            else:
-                record_action('blocked')
-                response.block = True
-    else:
-        #if we're starting or resuming a hit
-        if session.current_hit != hit:
-            initialize_hit(hit)
-            if (hits_done(request.workerid, request.study) >= 1) or (not request.live and request.vars.hits_completed >= 1):
-                session[hit].phase = 'verify'
-                session[hit].attempts = 0
-        session.current_hit = hit
-        hit_session = session[session.current_hit]
-
+    return form
+            
 def submit_button(name):
     return DIV(
         INPUT(_type="submit",_name=name, _value="Submit HIT", _class="btn btn-primary btn-large"),

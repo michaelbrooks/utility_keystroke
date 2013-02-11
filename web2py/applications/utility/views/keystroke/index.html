@@ -28,7 +28,7 @@
         {{if request.preview:}}
             <div class="btn btn-large disabled" disabled="disabled">Get started</div>
         {{else:}}
-            <a class="btn btn-primary btn-large" href="{{=URL(f='record', vars=request.get_vars)}}">Get started</a>
+            <a class="btn btn-primary btn-large" href="{{=URL(f='index', vars=request.get_vars)}}&enroll=1">Get started</a>
         {{pass}}
     </div>
 </div>
