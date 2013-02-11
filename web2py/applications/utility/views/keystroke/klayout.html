@@ -24,16 +24,18 @@
   <!-- include stylesheets -->
   {{
   response.files.append(URL('static','css/bootstrap.css'))
+  response.files.append(URL('static','css/jquery-ui-slider.css'))
   response.files.append(URL('static','keystroke/css/keystroke.css'))
   response.files.append(URL('static','js/bootstrap.js'))
   response.files.append(URL('static','keystroke/js/keystroke.js'))
+  response.files.append(URL('static','js/jquery-ui-1.10.0.custom.min.js'))
   }}
   
   <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAAth7zrGMu0cMmdNM_D5ftRhT2yXp_ZAY8_ufC3CFXhHIE1NvwkxQdDaUStaTB89mwqx1f5TclEXPaFg"></script>
 
   {{
   # Replaced from web2py_ajax.html
-  response.files.insert(0,URL('static','js/jquery.js'))
+  response.files.insert(0,URL('static','js/jquery-1.9.1.min.js'))
   response.include_meta()
   response.include_files()
   }}

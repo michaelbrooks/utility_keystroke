@@ -184,7 +184,7 @@ def index():
         return verify(None)
     if hit_session.next_step == 'mood_test':
         # We've authenticated, so now we are going to do the task
-        response.view = 'keystroke/verified.html'
+        response.view = 'keystroke/mood_test.html'
         return mood_test(None)
     if hit_session.next_step == 'free_write':
         # We've done the mood test, now time for the free writing
@@ -443,32 +443,47 @@ def block_multiple(parameter):
         #And we're good to go
         return True
 
+def get_mood_item(labelText, name):
+    return DIV(
+        DIV(labelText, _class="question"),
+        DIV(_class="slider"),
+        INPUT(_name=name, _type="hidden"),
+        _class="mood item clearfix", _id=name)
+        
 # Get the mood test questionnaire
 def get_mood_form(param):
-    frustrationInputs = [
-        LABEL(INPUT(_type="radio", _name="frustration", _value='1', _id="frustration-0", requires=IS_NOT_EMPTY(error_message='You must rate your frustration')),
-            'Not at all frustrating',
-            _for="frustration-0", _class="radio"),
-        LABEL(INPUT(_type="radio", _name="frustration", _value='2', _id="frustration-1"),
-            'Slightly frustrating', 
-            _for="frustration-1", _class="radio"),
-        LABEL(INPUT(_type="radio", _name="frustration", _value='3', _id="frustration-2"),
-            'Moderately frustrating', 
-            _for="frustration-2", _class="radio"),
-        LABEL(INPUT(_type="radio", _name="frustration", _value='4', _id="frustration-3"),
-            'Very frustrating', 
-            _for="frustration-3", _class="radio"),
-        LABEL(INPUT(_type="radio", _name="frustration", _value='5', _id="frustration-4"),
-            'Extremely frustrating', 
-            _for="frustration-4", _class="radio")
-    ]
-    frustrationItem = form_item("How frustrating was typing the phrase to verify your identity? (required)", frustrationInputs)
     
-    verificationItem = verify_item('verify')
+    form = FORM(
+        DIV("Adjust the sliders below to indicate how well each word describes your present mood:", _class="instructions"),
+        _id="mood-form", _class="questions well")
+
+    form.append(DIV(
+        DIV("Definitely feel", _class="left"),
+        DIV("Not sure", _class="middle"),
+        DIV("Definitely do not feel", _class="right"),
+        _class="legend clearfix"))
+        
+    form.append(get_mood_item('Lively', 'm_lively'))
+    form.append(get_mood_item('Drowsy', 'm_drowsy'))
+    form.append(get_mood_item('Happy', 'm_happy'))
+    form.append(get_mood_item('Grouchy', 'm_grouchy'))
+        
+    form.append(get_mood_item('Sad', 'm_sad'))
+    form.append(get_mood_item('Peppy', 'm_peppy'))
+    form.append(get_mood_item('Tired', 'm_tired'))
+    form.append(get_mood_item('Nervous', 'm_nervous'))
+        
+    form.append(get_mood_item('Caring', 'm_caring'))
+    form.append(get_mood_item('Calm', 'm_calm'))
+    form.append(get_mood_item('Content', 'm_content'))
+    form.append(get_mood_item('Loving', 'm_loving'))
+        
+    form.append(get_mood_item('Gloomy', 'm_gloomy'))
+    form.append(get_mood_item('Fed up', 'm_fedup'))
+    form.append(get_mood_item('Jittery', 'm_jittery'))
+    form.append(get_mood_item('Active', 'm_active'))
     
-    submitButton = submit_button('submit')
-    
-    form = FORM(frustrationItem, verificationItem, submitButton, _id="verified-form", _class="questions well")
+    form.append(submit_button('submit'))
     
     return form
             

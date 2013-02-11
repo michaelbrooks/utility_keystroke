@@ -1,0 +1,64 @@
+{{extend 'keystroke/klayout.html'}}
+<div>
+    <h2>Questionnaire</h2>
+    <div class="error-box">
+    {{if form.errors:}}
+        {{uniqueErrors = list(set(form.errors.values()))}}
+        {{for error in uniqueErrors:}}
+            <div class="alert alert-error">{{=error}}</div>
+        {{pass}}
+        {{form.errors.clear()}}
+    {{pass}}
+    </div>
+    
+    {{=form}}
+    
+    <script type="text/javascript">
+        var sliderMax = 100;
+        var sliderMin = 0;
+        var fontMin = 10;
+        var fontMax = 24;
+        
+        /*
+         * Converts a slider value (0 to 100) to the range 0 to 1,
+         * reversed about 0.5.
+         */
+        function normalizeSlider(value) {
+            return 1 - (value - sliderMin) / (sliderMax - sliderMin);
+        }
+        
+        $('.mood.item .slider').slider({
+            min: sliderMin,
+            max: sliderMax,
+            value: (sliderMax + sliderMin) / 2,
+            animate: true,
+            slide: function(event, ui) {
+                var fontSize = normalizeSlider(ui.value);
+                fontSize = fontSize * (fontMax - fontMin) + fontMin;
+                
+                $(this).parent().css({
+                    'font-size': fontSize + "px"
+                });
+            }
+        });
+        
+        $("#mood-form").submit(function(event) {
+            
+            // Retrieve all the slider values
+            $('.mood.item').each(function() {
+                var $this = $(this);
+                var id = $this.attr('id');
+                var value = normalizeSlider($this.find('.slider').slider('value'));
+                $('#mood-form [name=' + id + ']').val(value);
+            });
+            
+            /*var animal = $(":radio[name=verify]:checked", this);
+            if (!frustration.length || !animal.length) {
+                validation_error("Please answer all of the questions.");
+                event.preventDefault();
+                return false;
+            }*/
+            return true;
+        });
+    </script>
+</div>

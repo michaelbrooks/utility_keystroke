@@ -166,3 +166,53 @@
     color: red;
     background-color: #070053;
 }
+
+#mood-form .instructions {
+    margin: 10px 0 20px 0;
+}
+
+#mood-form .legend {
+    width: 600px;
+    margin-left: 120px;
+    margin-bottom: 15px;
+    font-weight: bold;
+    position: relative;
+}
+#mood-form .legend .left {
+    float: left;
+}
+#mood-form .legend .right {
+    float: right;
+}
+#mood-form .legend .middle {
+    text-align: center;
+    position: absolute;
+    width: 100%;
+}
+
+.mood.item {
+    font-size: 17px;
+}
+
+.mood.item .question {
+    width: 100px;
+    margin-right: 20px;
+    text-align: right;
+    line-height: 26px;
+    float: left;
+}
+
+.mood.item .slider {
+    border-radius: 0;
+    float: left;
+    width: 600px;
+    margin-top: 7px;
+}
+
+.mood.item .slider .ui-slider-handle {
+    height: 2em;
+    width: 1em;
+    margin-left: -0.5em;
+    top: -0.7em;
+    border-radius: 2px;
+}
