@@ -55,7 +55,6 @@ if session.flashType:
     response.flashType = session.flashType
     session.flashType = None
 
-response.session = session
 response.title = "Authentication Research Study"
 
 verificationAnswers = [
