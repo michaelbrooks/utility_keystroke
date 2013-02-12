@@ -6,7 +6,7 @@ MIN_STDEV = 6
 KEYPHRASE = "The quick brown fox jumps over the lazy dog"
 REQUIRED_RECORDINGS = 6
 FAIL_CHANCE = 0.00
-
+NUM_ASSOCIATIONS = 3
 ENROLL_PRICE = 0.04
 
 import random, hashlib, uuid, datetime, time, math
@@ -126,6 +126,189 @@ verifications = [
     {"code":"RrQsTKsrq8", "answer":"duck"},
     {"code":"xufN9TJeMi", "answer":"pig"},
     {"code":"IardZqBAGk", "answer":"fish"}
+]
+
+association_list = [
+    "afraid",
+    "blue",
+    "citizen",
+    "decorum",
+    "fall",
+    "hammer",
+    "justice",
+    "month",
+    "pretty",
+    "satisfied",
+    "smooth",
+    "swift",
+    "wash",
+    "anger",
+    "book",
+    "city",
+    "deep",
+    "family",
+    "hand",
+    "king",
+    "moon",
+    "priest",
+    "scissors",
+    "soft",
+    "swim",
+    "water",
+    "anxiety",
+    "box",
+    "close",
+    "despise",
+    "fiance(e)",
+    "happiness",
+    "kiss",
+    "moral",
+    "proud",
+    "scold",
+    "soldier",
+    "sympathy",
+    "whiskey",
+    "attend",
+    "boy",
+    "cold",
+    "die",
+    "finger",
+    "hard",
+    "lamp",
+    "mountain",
+    "prune",
+    "scorn",
+    "sour",
+    "table",
+    "whistle",
+    "baby",
+    "bread",
+    "comfort",
+    "dispute",
+    "flowers",
+    "hay",
+    "lie",
+    "music",
+    "pure",
+    "sea",
+    "spider",
+    "thief",
+    "white",
+    "bath",
+    "brother",
+    "command",
+    "divorce",
+    "foot",
+    "head",
+    "light",
+    "mutton",
+    "question",
+    "sheep",
+    "square",
+    "thirsty",
+    "wild",
+    "beautiful",
+    "butter",
+    "cook",
+    "doctor",
+    "foreign",
+    "health",
+    "lion",
+    "needle",
+    "quiet",
+    "ship",
+    "stem",
+    "to fear",
+    "window",
+    "bed",
+    "butterfly",
+    "cottage",
+    "door",
+    "friendly",
+    "heavy",
+    "long",
+    "new",
+    "red",
+    "short",
+    "stick",
+    "tobacco",
+    "wish",
+    "bible",
+    "cabbage",
+    "count",
+    "dream",
+    "frog",
+    "high",
+    "loud",
+    "ocean",
+    "religion",
+    "sick",
+    "stomach",
+    "tree",
+    "woman",
+    "big",
+    "carpet",
+    "cow",
+    "eagle",
+    "fruit",
+    "hit",
+    "magazine",
+    "old",
+    "rich",
+    "sickness",
+    "stork",
+    "trip",
+    "working",
+    "bird",
+    "chair",
+    "dance",
+    "earth",
+    "fur",
+    "house",
+    "man",
+    "paint",
+    "river",
+    "sin",
+    "stove",
+    "trouble",
+    "wrong",
+    "bitter",
+    "cheese",
+    "dark",
+    "eating",
+    "girl",
+    "hunger",
+    "marry",
+    "part",
+    "rough",
+    "sing",
+    "street",
+    "turnip",
+    "yellow",
+    "black",
+    "child",
+    "dear",
+    "evil",
+    "glass",
+    "ink",
+    "memory",
+    "pencil",
+    "sad",
+    "sleep",
+    "stupid",
+    "unjust",
+    "blossom",
+    "choose",
+    "death",
+    "expensive",
+    "green",
+    "joy",
+    "money",
+    "pray",
+    "salt",
+    "slow",
+    "sweet",
+    "village"
 ]
 
 hit_session = None
@@ -352,15 +535,64 @@ def verify(param):
 # NOTE: For now just show the old questions
 def mood_test(param):
 
-    # Set this to 0 if not yet set
-    if 'invalid_verifs' not in hit_session:
-        hit_session.invalid_verifs = 0
-
     form = get_mood_form(param);
     
     if form.process(onfailure="").accepted:
-        # save the questionnaire
-        record_post_survey(request.post_vars)
+        # save the mood form for later
+        hit_session.mood_form = request.post_vars
+        
+        hit_session.next_step = 'free_write'
+        
+        # Go home and try again
+        redirect(URL(f='index', vars=request.get_vars))
+        
+    elif form.errors:
+        record_action('invalid: verified', form.errors)
+        
+    return dict(form=form, messages=messages)
+
+# Display a text area with instructions for free writing.
+# Then advance to word association
+def free_write(param):
+
+    form = get_free_write_form(param);
+    
+    if form.process(onfailure="").accepted:
+        # save the free writing for later
+        hit_session.free_write_text = request.post_vars.text
+        hit_session.free_write_time = request.post_vars.time
+        
+        hit_session.next_step = 'association'
+        
+        # Go home and try again
+        redirect(URL(f='index', vars=request.get_vars))
+        
+    elif form.errors:
+        record_action('invalid: verified', form.errors)
+        
+    return dict(form=form, messages=messages)
+
+# Display a series of one-word prompts.
+# When all have been collected, submit the HIT.
+def association(param):
+    
+    #Initialize associations to 0 if not set yet
+    if 'associations' not in hit_session:
+        hit_session.associations = {}
+
+    form = get_associations_form(param);
+    
+    if form.process(onfailure="").accepted:
+        # save this word association
+        hit_session.associations[request.post_vars['prompt_word']] = request.post_vars['response_word']
+        
+    elif form.errors:
+        record_action('invalid: verified', form.errors)
+    
+    if len(hit_session.associations) >= NUM_ASSOCIATIONS:
+        
+        # Save everything
+        record_post_survey()
         
         # complete the HIT
         del session[session.current_hit]
@@ -372,18 +604,9 @@ def mood_test(param):
         session.flashType = "success"
         hit_session.next_step = 'thanks'
         
-        # Reset the verification failure counter
-        hit_session.invalid_verifs = 0
-        
         # Go home and try again
         redirect(URL(f='index', vars=request.get_vars))
-        
-    elif form.errors:
-        if 'verify' in form.errors:
-            # The human test was wrong
-            hit_session.invalid_verifs += 1
-        record_action('invalid: verified', form.errors)
-        
+    
     return dict(form=form, messages=messages)
 
 # Display a thank you message
@@ -461,7 +684,7 @@ def get_mood_form(param):
             BR(),
             I("Note: you must adjust each slider."),
             _class="instructions"),
-        _id="mood-form", _class="questions well")
+        _id="mood-form", _class="questions well clearfix")
 
     # form.append(DIV(
         # DIV("Definitely feel", _class="left"),
@@ -492,7 +715,36 @@ def get_mood_form(param):
     form.append(submit_button('submit'))
     
     return form
-            
+
+# Get the free writing form
+def get_free_write_form(param):
+    form = FORM(
+        DIV(
+            P("In the box below, please write a paragraph of about 3 lines in a stream-of-consciousness style."),
+            UL(
+                LI("Start with whatever your mind thinks of first. It doesn't matter what it is."),
+                LI("Don't worry about grammar or structure."),
+                LI("Allow your thoughts to drift freely."),
+                LI("Don't edit what you've written.")
+            ),
+            _class="instructions"),
+        INPUT(_name="time", _type="hidden"),
+        TEXTAREA(_name="text", _id="free-write-box", requires=IS_NOT_EMPTY(error_message="You must submit some writing")),
+        _id="free-write-form", _class="questions well clearfix")
+
+        
+    form.append(DIV(
+        DIV(_class="checkmark fade"),
+        INPUT(_type="submit",_name='submit', _id='submit', _disabled="disabled", _value="Next Page", _class="btn btn-primary btn-large"),
+        _class="form-footer"
+        ))
+    
+    return form
+
+def get_associations_form(param):
+
+    return FORM()
+    
 # Get the post enrollment questionnaire
 def get_post_enroll_form(param):
     ageItem = form_item("What is your age, in years? (required)", 
@@ -593,7 +845,7 @@ def get_post_enroll_form(param):
     
     submitButton = submit_button('submit')
     
-    form = FORM(ageItem, genderItem, occupationItem, incomeItem, biometricItem, verificationItem, submitButton, _id="enrolled-form", _class="questions well")
+    form = FORM(ageItem, genderItem, occupationItem, incomeItem, biometricItem, verificationItem, submitButton, _id="enrolled-form", _class="questions well clearfix")
     
     return form
             

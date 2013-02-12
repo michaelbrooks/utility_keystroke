@@ -1,0 +1,55 @@
+{{extend 'keystroke/klayout.html'}}
+<div>
+    <h2>Free Writing</h2>
+    <div class="error-box">
+    {{if form.errors:}}
+        {{uniqueErrors = list(set(form.errors.values()))}}
+        {{for error in uniqueErrors:}}
+            <div class="alert alert-error">{{=error}}</div>
+        {{pass}}
+        {{form.errors.clear()}}
+    {{pass}}
+    </div>
+    
+    {{=form}}
+    
+    <script type="text/javascript">
+        var start_time = null;
+        var stop_time = null;
+        
+        var checkmark = $('#free-write-form .checkmark');
+        var submitButton = $('#submit');
+        var inputBox = $('#free-write-box');
+        
+        inputBox.keyup(function() {
+            if (start_time === null) {
+                start_time = new Date();
+            }
+            stop_time = new Date();
+            
+            var count = $(this).val().split(' ');
+            if (count.length > 60) {
+                checkmark.addClass('in');
+                submitButton.removeAttr('disabled');
+            } else {
+                checkmark.removeClass('in');
+                submitButton.attr('disabled', 'disabled');
+            }
+        }).focus();
+    
+        $("#free-write-form").submit(function(event) {
+            
+            var count = inputBox.val().split(' ');
+            if (count.length < 60) {
+                validation_error('Please write more text.');
+                event.preventDefault();
+                return false;
+            }
+            
+            var interval = stop_time - start_time;
+            $('[name=time]').val(interval);
+            
+            return true;
+        });
+    </script>
+</div>
