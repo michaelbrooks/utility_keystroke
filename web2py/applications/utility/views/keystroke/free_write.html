@@ -35,7 +35,16 @@
                 checkmark.removeClass('in');
                 submitButton.attr('disabled', 'disabled');
             }
-        }).focus();
+        })
+        .bind('paste', function(event) {
+            event.preventDefault();
+            return false;
+        })
+        .bind('drop', function(event) {
+            event.preventDefault();
+            return false;
+        })
+        .focus();
     
         $("#free-write-form").submit(function(event) {
             
