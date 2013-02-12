@@ -172,7 +172,7 @@
 }
 
 #mood-form .legend {
-    width: 600px;
+    width: 500px;
     margin-left: 120px;
     margin-bottom: 15px;
     font-weight: bold;
@@ -203,18 +203,25 @@
     margin-left: 10px;
 }
 
-.mood.item .question {
-    width: 100px;
-    margin-right: 20px;
-    text-align: right;
+.mood.item .mood-label {
+    width: 150px;
     line-height: 26px;
     float: left;
+}
+
+.mood.item .mood-label.positive {
+    text-align: right;
+    margin-right: 20px;
+}
+.mood.item .mood-label.negative {
+    text-align: negative;
+    margin-left: 20px;
 }
 
 .mood.item .slider {
     border-radius: 0;
     float: left;
-    width: 600px;
+    width: 500px;
     margin-top: 7px;
 }
 

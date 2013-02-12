@@ -1,6 +1,6 @@
 {{extend 'keystroke/klayout.html'}}
 <div>
-    <h2>Questionnaire</h2>
+    <h2>Mood Test</h2>
     <div class="error-box">
     {{if form.errors:}}
         {{uniqueErrors = list(set(form.errors.values()))}}
@@ -27,6 +27,10 @@
             return 1 - (value - sliderMin) / (sliderMax - sliderMin);
         }
         
+        function normToFont(normValue) {
+            return normValue * (fontMax - fontMin) + fontMin
+        }
+        
         $('.mood.item .slider').slider({
             min: sliderMin,
             max: sliderMax,
@@ -34,7 +38,8 @@
             animate: true,
             slide: function(event, ui) {
                 var normVal = normalizeSlider(ui.value);
-                var fontSize = fontSize * (fontMax - fontMin) + fontMin;
+                var positiveFontSize = normToFont(normVal);
+                var negativeFontSize = normToFont(1 - normVal);
                 
                 var moodItem = $(this).parent();
                 var id = moodItem.attr('id');
@@ -45,9 +50,12 @@
                 //Save the value in the hidden form field
                 $('#mood-form [name=' + id + ']').val(normVal);
                 
-                //Set the label size
-                $(this).parent().css({
-                    'font-size': fontSize + "px"
+                //Set the label sizes
+                moodItem.find('.mood-label.positive').css({
+                    'font-size': positiveFontSize + "px"
+                });
+                moodItem.find('.mood-label.negative').css({
+                    'font-size': negativeFontSize + "px"
                 });
             }
         });

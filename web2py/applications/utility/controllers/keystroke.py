@@ -443,11 +443,12 @@ def block_multiple(parameter):
         #And we're good to go
         return True
 
-def get_mood_item(labelText, name):
+def get_mood_item(labelText, reverseLabelText, name):
     return DIV(
-        DIV(labelText, _class="question"),
-        DIV(_class="slider"),
         DIV(_class="checkmark fade"),
+        DIV(labelText, _class="positive mood-label"),
+        DIV(_class="slider"),
+        DIV(reverseLabelText, _class="negative mood-label"),
         INPUT(_name=name, _type="hidden"),
         _class="mood item clearfix", _id=name)
         
@@ -455,34 +456,38 @@ def get_mood_item(labelText, name):
 def get_mood_form(param):
     
     form = FORM(
-        DIV("Adjust the sliders below to indicate how well each word describes your present mood:", _class="instructions"),
+        DIV(
+            "Adjust the sliders below to indicate how well each word describes your present mood:",
+            BR(),
+            I("Note: you must adjust each slider."),
+            _class="instructions"),
         _id="mood-form", _class="questions well")
 
-    form.append(DIV(
-        DIV("Definitely feel", _class="left"),
-        DIV("Not sure", _class="middle"),
-        DIV("Definitely do not feel", _class="right"),
-        _class="legend clearfix"))
+    # form.append(DIV(
+        # DIV("Definitely feel", _class="left"),
+        # DIV("Not sure", _class="middle"),
+        # DIV("Definitely do not feel", _class="right"),
+        # _class="legend clearfix"))
         
-    form.append(get_mood_item('Lively', 'm_lively'))
-    form.append(get_mood_item('Drowsy', 'm_drowsy'))
-    form.append(get_mood_item('Happy', 'm_happy'))
-    form.append(get_mood_item('Grouchy', 'm_grouchy'))
+    form.append(get_mood_item('lively', 'not lively', 'm_lively'))
+    form.append(get_mood_item('drowsy', 'not drowsy', 'm_drowsy'))
+    form.append(get_mood_item('happy', 'not happy', 'm_happy'))
+    form.append(get_mood_item('grouchy', 'not grouchy', 'm_grouchy'))
         
-    form.append(get_mood_item('Sad', 'm_sad'))
-    form.append(get_mood_item('Peppy', 'm_peppy'))
-    form.append(get_mood_item('Tired', 'm_tired'))
-    form.append(get_mood_item('Nervous', 'm_nervous'))
+    form.append(get_mood_item('sad', 'not sad', 'm_sad'))
+    form.append(get_mood_item('peppy', 'not peppy', 'm_peppy'))
+    form.append(get_mood_item('tired', 'not tired', 'm_tired'))
+    form.append(get_mood_item('nervous', 'not nervous', 'm_nervous'))
         
-    form.append(get_mood_item('Caring', 'm_caring'))
-    form.append(get_mood_item('Calm', 'm_calm'))
-    form.append(get_mood_item('Content', 'm_content'))
-    form.append(get_mood_item('Loving', 'm_loving'))
+    form.append(get_mood_item('caring', 'not caring', 'm_caring'))
+    form.append(get_mood_item('calm', 'not calm', 'm_calm'))
+    form.append(get_mood_item('content', 'not content', 'm_content'))
+    form.append(get_mood_item('loving', 'not loving', 'm_loving'))
         
-    form.append(get_mood_item('Gloomy', 'm_gloomy'))
-    form.append(get_mood_item('Fed up', 'm_fedup'))
-    form.append(get_mood_item('Jittery', 'm_jittery'))
-    form.append(get_mood_item('Active', 'm_active'))
+    form.append(get_mood_item('gloomy', 'not gloomy', 'm_gloomy'))
+    form.append(get_mood_item('fed up', 'not fed up', 'm_fedup'))
+    form.append(get_mood_item('jittery', 'not jittery', 'm_jittery'))
+    form.append(get_mood_item('active', 'not active', 'm_active'))
     
     form.append(submit_button('submit'))
     
