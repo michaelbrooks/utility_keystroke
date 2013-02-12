@@ -40,7 +40,7 @@
         
     
         $("#association-form").submit(function(event) {
-            var response = $.trim(responseBox.val());
+            var response = $.trim(responseBox.val()).toLowerCase();
             
             if (response.length == 0) {
                 validation_error('Please write a word in the box.');
