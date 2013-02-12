@@ -55,6 +55,7 @@ if session.flashType:
     response.flashType = session.flashType
     session.flashType = None
 
+response.session = session
 response.title = "Authentication Research Study"
 
 verificationAnswers = [
@@ -530,9 +531,8 @@ def verify(param):
         
     return dict(keyphrase=KEYPHRASE, form=form, messages=messages)
 
-# Show the mood test and advance to the
-# free writing when done.
-# NOTE: For now just show the old questions
+# Show the mood test and advance to word
+# association when done.
 def mood_test(param):
 
     form = get_mood_form(param);
@@ -540,27 +540,6 @@ def mood_test(param):
     if form.process(onfailure="").accepted:
         # save the mood form for later
         hit_session.mood_form = request.post_vars
-        
-        hit_session.next_step = 'free_write'
-        
-        # Go home and try again
-        redirect(URL(f='index', vars=request.get_vars))
-        
-    elif form.errors:
-        record_action('invalid: verified', form.errors)
-        
-    return dict(form=form, messages=messages)
-
-# Display a text area with instructions for free writing.
-# Then advance to word association
-def free_write(param):
-
-    form = get_free_write_form(param);
-    
-    if form.process(onfailure="").accepted:
-        # save the free writing for later
-        hit_session.free_write_text = request.post_vars.text
-        hit_session.free_write_time = request.post_vars.time
         
         hit_session.next_step = 'association'
         
@@ -572,24 +551,16 @@ def free_write(param):
         
     return dict(form=form, messages=messages)
 
-# Display a series of one-word prompts.
-# When all have been collected, submit the HIT.
-def association(param):
-    
-    #Initialize associations to 0 if not set yet
-    if 'associations' not in hit_session:
-        hit_session.associations = {}
+# Display a text area with instructions for free writing.
+# When submitted, the HIT is done.
+def free_write(param):
 
-    form = get_associations_form(param);
+    form = get_free_write_form(param);
     
     if form.process(onfailure="").accepted:
-        # save this word association
-        hit_session.associations[request.post_vars['prompt_word']] = request.post_vars['response_word']
-        
-    elif form.errors:
-        record_action('invalid: verified', form.errors)
-    
-    if len(hit_session.associations) >= NUM_ASSOCIATIONS:
+        # save the free writing in the session
+        hit_session.free_write_text = request.post_vars.text
+        hit_session.free_write_time = request.post_vars.time
         
         # Save everything
         record_post_survey()
@@ -603,6 +574,44 @@ def association(param):
         session.flash = "The HIT has been submitted."
         session.flashType = "success"
         hit_session.next_step = 'thanks'
+        
+        # Go home and try again
+        redirect(URL(f='index', vars=request.get_vars))
+        
+    elif form.errors:
+        record_action('invalid: verified', form.errors)
+        
+    return dict(form=form, messages=messages)
+
+# Display a series of one-word prompts.
+# When all have been collected, go to free writing.
+def association(param):
+    
+    #Initialize associations to 0 if not set yet
+    if 'associations' not in hit_session:
+        hit_session.associations = {}
+        hit_session.association_times = {}
+    
+    form, promptWordBox, hiddenPromptWord = get_association_form(param);
+    
+    if form.process(onfailure="").accepted:
+        # save this word association
+        prompt_word = request.post_vars['prompt_word']
+        
+        hit_session.associations[prompt_word] = request.post_vars['response_word']
+        hit_session.association_times[prompt_word] = request.post_vars['time']
+        
+        # We need to edit the form we're displaying since we just validated the submission
+        prompt_word = get_prompt_word(None)
+        hiddenPromptWord['_value'] = prompt_word
+        promptWordBox[0] = prompt_word
+        
+    elif form.errors:
+        record_action('invalid: verified', form.errors)
+    
+    if len(hit_session.associations) >= NUM_ASSOCIATIONS:
+        
+        hit_session.next_step = 'free_write'
         
         # Go home and try again
         redirect(URL(f='index', vars=request.get_vars))
@@ -712,7 +721,7 @@ def get_mood_form(param):
     form.append(get_mood_item('jittery', 'not jittery', 'm_jittery'))
     form.append(get_mood_item('active', 'not active', 'm_active'))
     
-    form.append(submit_button('submit'))
+    form.append(INPUT(_type="submit",_name='submit', _id='submit', _value="Next Page", _class="btn btn-primary btn-large"))
     
     return form
 
@@ -733,17 +742,53 @@ def get_free_write_form(param):
         _id="free-write-form", _class="questions well clearfix")
 
         
+    submit = submit_button('submit')
+    submit.insert(0, DIV(_class="checkmark fade"))
     form.append(DIV(
-        DIV(_class="checkmark fade"),
-        INPUT(_type="submit",_name='submit', _id='submit', _disabled="disabled", _value="Next Page", _class="btn btn-primary btn-large"),
+        submit,
         _class="form-footer"
         ))
     
     return form
 
-def get_associations_form(param):
+def get_prompt_word(param):
+    hitNumber = hits_done(request.workerid, request.study)
+    if not request.live and ("hits_completed" in request.vars):
+        hitNumber = int(request.vars.hits_completed)
+    
+    promptIndex = NUM_ASSOCIATIONS * (hitNumber - 1) + len(hit_session.associations)
+        
+    prompt_word = association_list[promptIndex]
+    
+    return prompt_word
+    
+def get_association_form(param):
 
-    return FORM()
+    prompt_word = get_prompt_word(param)
+    hiddenPromptWord = INPUT(_name="prompt_word", _type="hidden", _value=prompt_word)
+    promptWordBox = DIV(prompt_word, _class="prompt-word-box")
+    
+    form = FORM(
+        DIV(P("Type as quickly as possible the first word that occurs to your mind."),
+            I("Press the green button to begin."),
+            _class="instructions"),
+        INPUT(_name="time", _type="hidden"),
+        hiddenPromptWord,
+        DIV(BUTTON("I'm ready. Show the prompt word.", 
+            _class="ready-button btn btn-success btn-large"),
+            _class="prep-area"),
+        DIV(
+            promptWordBox,
+            INPUT(_name="response_word", _type="text", _autocomplete="off", _class="response-word-box",
+                requires=IS_NOT_EMPTY(error_message="You must respond with a word")),
+            BR(),
+            INPUT(_type="submit",_name='submit', _id='submit', _disabled="disabled", _value="Next Word", _class="btn btn-primary btn-large"),
+            _class="response-area fade"
+        ),
+        _id="association-form", _class="questions well clearfix"
+    )
+    
+    return form, promptWordBox, hiddenPromptWord
     
 # Get the post enrollment questionnaire
 def get_post_enroll_form(param):
@@ -852,6 +897,7 @@ def get_post_enroll_form(param):
 def submit_button(name):
     return DIV(
         INPUT(_type="submit",_name=name, _value="Submit HIT", _class="btn btn-primary btn-large"),
+        BR(),
         SPAN("You may complete as many additional HITs in this group as you want.", _class="reminder-text")
     )
 

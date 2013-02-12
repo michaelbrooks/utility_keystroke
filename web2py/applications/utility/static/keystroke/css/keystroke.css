@@ -239,7 +239,7 @@
 #free-write-box {
     display: block;
     margin: 60px auto 60px auto;
-    width: 600px;
+    width: 700px;
     height: 150px;
 }
 
@@ -256,4 +256,32 @@
 
 #free-write-form .form-footer input {
     display: inline-block;
+}
+
+#association-form .prep-area {
+    width: 500px;
+    margin: 20px auto;
+    text-align: center;
+}
+
+#association-form .response-area {
+    width: 500px;
+    margin: auto;
+    text-align: center;
+}
+
+#association-form .prompt-word-box {
+    font-size: 30px;
+    line-height: 40px;
+    font-style: italic;
+    margin-top: 40px;
+}
+
+#association-form .response-word-box {
+    font-size: 30px;
+    margin: 20px;
+    line-height: 34px;
+    height: 34px;
+    text-align: center;
+    width: 300px;
 }

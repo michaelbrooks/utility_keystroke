@@ -1,0 +1,63 @@
+{{extend 'keystroke/klayout.html'}}
+<div>
+    <h2>Word Associations Test</h2>
+    <div class="error-box">
+    {{if form.errors:}}
+        {{uniqueErrors = list(set(form.errors.values()))}}
+        {{for error in uniqueErrors:}}
+            <div class="alert alert-error">{{=error}}</div>
+        {{pass}}
+        {{form.errors.clear()}}
+    {{pass}}
+    </div>
+    
+    {{=form}}
+    
+    <script type="text/javascript">
+        var start_time = null;
+        
+        var promptWord = $('input[name=prompt_word]').val();
+        
+        var readyButton = $('.ready-button');
+        var submitButton = $('#submit');
+        var responseBox = $('input[name=response_word]');
+        
+        readyButton.click(function(event) {
+            $('.response-area').addClass('in');
+            $(this).attr('disabled', 'disabled');
+            
+            start_time = new Date();
+            $('input[name=response_word]').focus();
+            
+            event.preventDefault();
+            return false;
+        })
+        .focus();
+        
+        responseBox.on('keyup', function(event) {
+            submitButton.removeAttr('disabled');
+        });
+        
+    
+        $("#association-form").submit(function(event) {
+            var response = $.trim(responseBox.val());
+            
+            if (response.length == 0) {
+                validation_error('Please write a word in the box.');
+                event.preventDefault();
+                return false;
+            }
+            
+            if ($.trim(response) == promptWord) {
+                validation_error('Please respond with your own word, not the prompt word.');
+                event.preventDefault();
+                return false;
+            }
+            
+            var interval = new Date() - start_time;
+            $('[name=time]').val(interval);
+            
+            return true;
+        });
+    </script>
+</div>

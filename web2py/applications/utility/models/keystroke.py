@@ -37,9 +37,6 @@ db.define_table('ks_post_surveys',
                 db.Field('completed', 'integer'),
                 db.Field('attempts', 'integer'),
                 db.Field('duration', 'integer'),
-                db.Field('frustration', 'integer'),
-                db.Field('verification', 'text'),
-                db.Field('invalid_verifs', 'integer'),
 				db.Field('m_lively', 'double'),
 				db.Field('m_drowsy', 'double'),
 				db.Field('m_happy', 'double'),
@@ -56,9 +53,11 @@ db.define_table('ks_post_surveys',
 				db.Field('m_fedup', 'double'),
 				db.Field('m_jittery', 'double'),
 				db.Field('m_active', 'double'),
-				db.Field('m_overall', 'double'),
-				db.Field('free_write', 'text'),
+				# db.Field('m_overall', 'double'),
+				db.Field('free_write_text', 'text'),
+                db.Field('free_write_time', 'double'),
 				db.Field('associations', 'text'),
+                db.Field('association_times', 'text'),
                 migrate=migratep, fake_migrate=fake_migratep)
 
 def record_entry_survey(post):
@@ -88,7 +87,7 @@ def record_entry_survey(post):
                       verification=verification,
                       duration=duration)
                       
-def record_post_survey(post):
+def record_post_survey():
     hit = request.hitid
     worker = request.workerid
     ass = request.assid
@@ -98,39 +97,62 @@ def record_post_survey(post):
     
     attempts = hit_session.attempts
     completed = hits_done(request.workerid, request.study)
-    frustration = post.frustration
-    verification = post.verify
-    invalid_verifs = hit_session.invalid_verifs
     
-	# db.Field('m_lively', 'double'),
-	# db.Field('m_drowsy', 'double'),
-	# db.Field('m_happy', 'double'),
-	# db.Field('m_grouchy', 'double'),
-	# db.Field('m_sad', 'double'),
-	# db.Field('m_peppy', 'double'),
-	# db.Field('m_tired', 'double'),
-	# db.Field('m_nervous', 'double'),
-	# db.Field('m_caring', 'double'),
-	# db.Field('m_calm', 'double'),
-	# db.Field('m_content', 'double'),
-	# db.Field('m_loving', 'double'),
-	# db.Field('m_gloomy', 'double'),
-	# db.Field('m_fedup', 'double'),
-	# db.Field('m_jittery', 'double'),
-	# db.Field('m_active', 'double'),
-	# db.Field('m_overall', 'double'),
-	# db.Field('free_write', 'text'),
-	# db.Field('associations', 'text'),
+    m_lively = hit_session.mood_form.m_lively
+    m_drowsy = hit_session.mood_form.m_drowsy
+    m_happy = hit_session.mood_form.m_happy
+    m_grouchy = hit_session.mood_form.m_grouchy
+	
+    m_sad = hit_session.mood_form.m_sad
+    m_peppy = hit_session.mood_form.m_peppy
+    m_tired = hit_session.mood_form.m_tired
+    m_nervous = hit_session.mood_form.m_nervous
+	
+    m_caring = hit_session.mood_form.m_caring
+    m_calm = hit_session.mood_form.m_calm
+    m_content = hit_session.mood_form.m_content
+    m_loving = hit_session.mood_form.m_loving
+	
+    m_gloomy = hit_session.mood_form.m_gloomy
+    m_fedup = hit_session.mood_form.m_fedup
+    m_jittery = hit_session.mood_form.m_jittery
+    m_active = hit_session.mood_form.m_active
+    
+    # m_overall = hit_session.mood_form.m_overall
+    
+    free_write_text = hit_session.free_write_text
+    free_write_time = hit_session.free_write_time
+    associations = hit_session.associations
+    association_times = hit_session.association_times
 	
     db.ks_post_surveys.insert(study=request.study,
-                      hitid=hit,
-                      workerid=worker,
-                      assid=ass,
-                      ip=ip,
-                      condition=condition,
-                      completed=completed,
-                      attempts=attempts,
-                      frustration=frustration,
-                      verification=verification,
-                      invalid_verifs=invalid_verifs,
-                      duration=duration)
+                    hitid=hit,
+                    workerid=worker,
+                    assid=ass,
+                    ip=ip,
+                    condition=condition,
+                    completed=completed,
+                    attempts=attempts,
+                    duration=duration,
+                    m_lively=m_lively,
+                    m_drowsy=m_drowsy,
+                    m_happy=m_happy,
+                    m_grouchy=m_grouchy,
+                    m_sad=m_sad,
+                    m_peppy=m_peppy,
+                    m_tired=m_tired,
+                    m_nervous=m_nervous,
+                    m_caring=m_caring,
+                    m_calm=m_calm,
+                    m_content=m_content,
+                    m_loving=m_loving,
+                    m_gloomy=m_gloomy,
+                    m_fedup=m_fedup,
+                    m_jittery=m_jittery,
+                    m_active=m_active,
+                    # m_overall=m_overall,
+                    free_write_text=free_write_text,
+                    free_write_time=free_write_time,
+                    associations=associations,
+                    association_times=association_times
+                      )
