@@ -447,6 +447,7 @@ def get_mood_item(labelText, name):
     return DIV(
         DIV(labelText, _class="question"),
         DIV(_class="slider"),
+        DIV(_class="checkmark fade"),
         INPUT(_name=name, _type="hidden"),
         _class="mood item clearfix", _id=name)
         

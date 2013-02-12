@@ -194,6 +194,15 @@
     font-size: 17px;
 }
 
+.mood.item .checkmark {
+    background-image: url(check_mark_green.png);
+    background-repeat: no-repeat;
+    width: 29px;
+    height: 26px;
+    float: left;
+    margin-left: 10px;
+}
+
 .mood.item .question {
     width: 100px;
     margin-right: 20px;
