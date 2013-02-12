@@ -55,7 +55,7 @@ if session.flashType:
     response.flashType = session.flashType
     session.flashType = None
 
-response.session = session
+# response.session = session
 response.title = "Authentication Research Study"
 
 verificationAnswers = [
@@ -592,7 +592,7 @@ def association(param):
         hit_session.associations = {}
         hit_session.association_times = {}
     
-    form, promptWordBox, hiddenPromptWord = get_association_form(param);
+    form, promptWordBox, hiddenPromptWord, submitButton = get_association_form(param);
     
     if form.process(onfailure="").accepted:
         # save this word association
@@ -602,9 +602,10 @@ def association(param):
         hit_session.association_times[prompt_word] = request.post_vars['time']
         
         # We need to edit the form we're displaying since we just validated the submission
-        prompt_word = get_prompt_word(None)
+        prompt_word, button_label = get_prompt_word(None)
         hiddenPromptWord['_value'] = prompt_word
         promptWordBox[0] = prompt_word
+        submitButton['_value'] = button_label
         
     elif form.errors:
         record_action('invalid: verified', form.errors)
@@ -721,7 +722,9 @@ def get_mood_form(param):
     form.append(get_mood_item('jittery', 'not jittery', 'm_jittery'))
     form.append(get_mood_item('active', 'not active', 'm_active'))
     
-    form.append(INPUT(_type="submit",_name='submit', _id='submit', _value="Next Page", _class="btn btn-primary btn-large"))
+    form.append(DIV(
+                    INPUT(_type="submit",_name='submit', _id='submit', _value="Next Page", _class="btn btn-primary btn-large"),
+                    _class="form-footer"))
     
     return form
 
@@ -760,13 +763,18 @@ def get_prompt_word(param):
         
     prompt_word = association_list[promptIndex]
     
-    return prompt_word
+    buttonLabel = "Next Word"
+    if len(hit_session.associations) == NUM_ASSOCIATIONS - 1:
+        buttonLabel = "Next Page"
+
+    return prompt_word, buttonLabel
     
 def get_association_form(param):
 
-    prompt_word = get_prompt_word(param)
+    prompt_word, buttonLabel = get_prompt_word(param)
     hiddenPromptWord = INPUT(_name="prompt_word", _type="hidden", _value=prompt_word)
     promptWordBox = DIV(prompt_word, _class="prompt-word-box")
+    submitButton = INPUT(_type="submit",_name='submit', _id='submit', _disabled="disabled", _value=buttonLabel, _class="btn btn-primary btn-large")
     
     form = FORM(
         DIV(P("Type as quickly as possible the first word that occurs to your mind."),
@@ -782,13 +790,13 @@ def get_association_form(param):
             INPUT(_name="response_word", _type="text", _autocomplete="off", _class="response-word-box",
                 requires=IS_NOT_EMPTY(error_message="You must respond with a word")),
             BR(),
-            INPUT(_type="submit",_name='submit', _id='submit', _disabled="disabled", _value="Next Word", _class="btn btn-primary btn-large"),
+            submitButton,
             _class="response-area fade"
         ),
         _id="association-form", _class="questions well clearfix"
     )
     
-    return form, promptWordBox, hiddenPromptWord
+    return form, promptWordBox, hiddenPromptWord, submitButton
     
 # Get the post enrollment questionnaire
 def get_post_enroll_form(param):
