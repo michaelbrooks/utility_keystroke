@@ -30,7 +30,7 @@
 #auth-example {
     font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
     font-size: 16px;
-    margin-left: 6px;
+    margin-left: 5px;
     margin-top: 20px;
     margin-bottom: 5px;
 }
@@ -50,11 +50,13 @@
 .answers {
     margin-top: 10px;
     margin-left: 50px;
+    float: left;
 }
 
 .img-loading {
     position: relative;
     padding: 3px;
+    float: left;
     
     margin-left: 50px;
     margin-top: 10px;

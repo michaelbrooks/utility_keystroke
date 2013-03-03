@@ -55,8 +55,8 @@ if session.flashType:
     response.flashType = session.flashType
     session.flashType = None
 
-# response.session = session
-response.title = "Authentication Research Study"
+response.session = session
+response.title = "Mood Study"
 
 verificationAnswers = [
     "cow",
@@ -312,6 +312,28 @@ association_list = [
     "village"
 ]
 
+moodTerms = [
+    ('lively', 'm_lively'),
+    ('drowsy', 'm_drowsy'),
+    ('happy', 'm_happy'),
+    ('grouchy', 'm_grouchy'),
+        
+    ('sad', 'm_sad'),
+    ('peppy', 'm_peppy'),
+    ('tired', 'm_tired'),
+    ('nervous', 'm_nervous'),
+        
+    ('caring', 'm_caring'),
+    ('calm', 'm_calm'),
+    ('content', 'm_content'),
+    ('loving', 'm_loving'),
+        
+    ('gloomy', 'm_gloomy'),
+    ('fed up', 'm_fedup'),
+    ('jittery', 'm_jittery'),
+    ('active', 'm_active'),
+]
+
 hit_session = None
 
 def index():
@@ -345,7 +367,7 @@ def index():
             hit_session.next_step = 'verify'
             response.view = 'keystroke/verify.html'
             return verify(None)
-    
+            
     if hit_session.next_step == 'welcome':
         # Show the welcome screen
         response.view = 'keystroke/index.html'
@@ -358,10 +380,10 @@ def index():
         # We're doing enrollment next
         response.view = 'keystroke/record.html'
         return enroll(None)
-    if hit_session.next_step == 'post_enroll':
+    if hit_session.next_step == 'register':
         # We've done enrollment and going on to post-enrollment questions
-        response.view = 'keystroke/enrolled.html'
-        return post_enroll(None)
+        response.view = 'keystroke/register.html'
+        return register(None)
     if hit_session.next_step == 'verify':
         # We're going to attempt authentication
         response.view = 'keystroke/verify.html'
@@ -389,7 +411,7 @@ def welcome(param):
     # If the user has clicked the "Get Started" button, then
     # the GET variable "enroll" will be set.
     if request.vars.enroll:
-        hit_session.next_step = 'enroll'
+        hit_session.next_step = 'register'
         
         # remove the enroll parameter
         del request.get_vars['enroll']
@@ -426,14 +448,23 @@ def enroll(param):
     #They've submitted all required recordings
     if hit_session.successfulRecordings >= REQUIRED_RECORDINGS:
         record_action('recordings completed')
-        hit_session.next_step = 'post_enroll'
         
-        session.flash = get_message('recordAllDone')
+        # complete the HIT
+        del session[session.current_hit]
+        session.current_hit = None
+        
+        # set the price to the enrollment price
+        alter_price(ENROLL_PRICE)
+        hit_finished()
+        
+        # Prepare to give thanks
+        session.flash = "The HIT has been submitted."
         session.flashType = "success"
+        hit_session.next_step = 'thanks'
         
-        # Go home and try again
+        # Go home and try again, but probably MTurk will takeover now
         redirect(URL(f='index', vars=request.get_vars))
-
+        
     response.isEnrollment = True
     request.enrollPrice = ENROLL_PRICE
     request.verifyPrice = request.price;
@@ -452,36 +483,25 @@ def enroll(param):
 
 # Show a post-enrollment questionnaire
 # Mark the HIT done when submitted.
-def post_enroll(param):
+def register(param):
     
     # Set this to 0 if not yet set
     if 'invalid_verifs' not in hit_session:
         hit_session.invalid_verifs = 0
     
-    form = get_post_enroll_form(param)
+    form = get_register_form(param)
     
     if form.process(onfailure="").accepted:
     
         # save the form answers
         record_entry_survey(request.post_vars)
         
-        # complete the HIT
-        del session[session.current_hit]
-        session.current_hit = None
-        
-        # set the price to the enrollment price
-        alter_price(ENROLL_PRICE)
-        hit_finished()
-        
-        # Prepare to give thanks
-        session.flash = "The HIT has been submitted."
-        session.flashType = "success"
-        session.next_step = 'thanks'
-        
         # Reset the verification failure counter
         hit_session.invalid_verifs = 0
         
-        # Go home and try again, but probably MTurk will takeover now
+        hit_session.next_step = 'enroll'
+        
+        # Go home and try again
         redirect(URL(f='index', vars=request.get_vars))
         
     elif form.errors:
@@ -489,7 +509,7 @@ def post_enroll(param):
             # there was a verification error
             hit_session.invalid_verifs += 1
         
-        record_action('invalid: enrolled', form.errors)
+        record_action('invalid: register', form.errors)
         
     response.isEnrollment = True
     request.enrollPrice = ENROLL_PRICE
@@ -701,26 +721,9 @@ def get_mood_form(param):
         # DIV("Not sure", _class="middle"),
         # DIV("Definitely do not feel", _class="right"),
         # _class="legend clearfix"))
-        
-    form.append(get_mood_item('lively', 'not lively', 'm_lively'))
-    form.append(get_mood_item('drowsy', 'not drowsy', 'm_drowsy'))
-    form.append(get_mood_item('happy', 'not happy', 'm_happy'))
-    form.append(get_mood_item('grouchy', 'not grouchy', 'm_grouchy'))
-        
-    form.append(get_mood_item('sad', 'not sad', 'm_sad'))
-    form.append(get_mood_item('peppy', 'not peppy', 'm_peppy'))
-    form.append(get_mood_item('tired', 'not tired', 'm_tired'))
-    form.append(get_mood_item('nervous', 'not nervous', 'm_nervous'))
-        
-    form.append(get_mood_item('caring', 'not caring', 'm_caring'))
-    form.append(get_mood_item('calm', 'not calm', 'm_calm'))
-    form.append(get_mood_item('content', 'not content', 'm_content'))
-    form.append(get_mood_item('loving', 'not loving', 'm_loving'))
-        
-    form.append(get_mood_item('gloomy', 'not gloomy', 'm_gloomy'))
-    form.append(get_mood_item('fed up', 'not fed up', 'm_fedup'))
-    form.append(get_mood_item('jittery', 'not jittery', 'm_jittery'))
-    form.append(get_mood_item('active', 'not active', 'm_active'))
+    
+    for name, key in moodTerms:
+        form.append(get_mood_item(name, 'not ' + name, key))
     
     form.append(DIV(
                     INPUT(_type="submit",_name='submit', _id='submit', _value="Next Page", _class="btn btn-primary btn-large"),
@@ -745,7 +748,7 @@ def get_free_write_form(param):
         _id="free-write-form", _class="questions well clearfix")
 
         
-    submit = submit_button('submit')
+    submit = submit_button('submit', True)
     submit.insert(0, DIV(_class="checkmark fade"))
     form.append(DIV(
         submit,
@@ -799,7 +802,7 @@ def get_association_form(param):
     return form, promptWordBox, hiddenPromptWord, submitButton
     
 # Get the post enrollment questionnaire
-def get_post_enroll_form(param):
+def get_register_form(param):
     ageItem = form_item("What is your age, in years? (required)", 
         INPUT(_type="text",_name="age",_autocomplete="off", requires=[
             IS_NOT_EMPTY(error_message="Age is required"), 
@@ -860,6 +863,19 @@ def get_post_enroll_form(param):
     ]
     incomeItem = form_item("What is your total annual household income in US dollars? (required)", incomeInputs)
     
+    moodInputs = [
+        LABEL(INPUT(_type="radio", _name="mood", _value='0', _id="mood-no", requires=IS_NOT_EMPTY(error_message="You must answer the question about mood disorder history.")),
+            'No',
+            _for="mood-no", _class="radio"),
+        LABEL(INPUT(_type="radio", _name="mood", _value='1', _id="mood-yes"),
+            'Yes',
+            _for="mood-yes", _class="radio"),
+        LABEL(INPUT(_type="radio", _name="mood", _value='2', _id="mood-null"),
+            'Decline to answer',
+            _for="mood-null", _class="radio"),
+    ]
+    moodItem = form_item("Have you every been diagnosed with a mood disorder or been prescribed mood stabilizing medication?", moodInputs)
+    
     biometricInputs = [
         LABEL(INPUT(_type="checkbox", _name="biometric", _value='fingerprint', _id="biometric-fingerprint", requires=IS_NOT_EMPTY(error_message="You must answer the question about identification systems.")),
             'Fingerprints',
@@ -892,19 +908,23 @@ def get_post_enroll_form(param):
     
     set_exclusion('biometric', 'biometric-none')
     
-    biometricItem = form_item("Which of the following identification systems have you used before? (required)", biometricInputs)
+    biometricItem = form_item("Which of the following identification or authentication systems have you used before? (required)", biometricInputs)
     
     verificationItem = verify_item('verify')
     
-    submitButton = submit_button('submit')
+    submitButton = INPUT(_type="submit",_name='submit', _id='submit', _value='Next Page', _class="btn btn-primary btn-large")
     
-    form = FORM(ageItem, genderItem, occupationItem, incomeItem, biometricItem, verificationItem, submitButton, _id="enrolled-form", _class="questions well clearfix")
+    form = FORM(ageItem, genderItem, occupationItem, incomeItem, moodItem, biometricItem, verificationItem, submitButton, _id="register-form", _class="questions well clearfix")
     
     return form
             
-def submit_button(name):
+def submit_button(name, disabled=False):
+    btn = INPUT(_type="submit",_name=name, _value="Submit HIT", _class="btn btn-primary btn-large")
+    if disabled:
+        btn['_disabled'] = 'disabled'
+        
     return DIV(
-        INPUT(_type="submit",_name=name, _value="Submit HIT", _class="btn btn-primary btn-large"),
+        btn,
         BR(),
         SPAN("You may complete as many additional HITs in this group as you want.", _class="reminder-text")
     )
@@ -986,7 +1006,7 @@ def verify_item(name):
     verifyPic = IMG(_src=imgSrc)
     loading = DIV(verifyPic, _class="img-loading")
     
-    verificationItem = form_item("Which animal is shown in the following image? (required)", verificationInputs, loading)
+    verificationItem = form_item("Human check: Which animal is shown in the following image? (required)", verificationInputs, loading)
     return verificationItem
 
 def form_item(prompt, inputs, *args):
@@ -1001,7 +1021,7 @@ def form_item(prompt, inputs, *args):
     question = DIV(_class="question")
     question.append(prompt)
     
-    item = DIV(_class="item")
+    item = DIV(_class="item clearfix")
     item.append(question)
     item.append(answers)
     

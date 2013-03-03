@@ -3,19 +3,24 @@
 <div style="position: relative" class="row">
     <div class="span12">
     {{if messages['recordInstructions'] == 'keystroke':}}
-        <h2 class="big-instructions">You are testing a "biometric" sign-in based on <a target="_blank" href="http://en.wikipedia.org/wiki/Keystroke_dynamics">keystroke dynamics</a>.</h2>
-        <h3 class="big-instructions">Keystroke dynamics</h3>
+        <h2 class="big-instructions">Train system to recognize your typing patterns.</h2>
+        <h3 class="big-instructions">Explanation</h3>
         <p>
-            The computer detects the unique pattern that you use to press keys.<br/>
-            Every person has a unique typing pattern that can be used to identify them.
+            For your mood and emotion data to be valid, we have to make sure that
+            exactly one physical person is answering the questions.
         </p>
-        
-        <h2 class="big-instructions">Instructions</h2>
+        <p>
+            At the start of each HIT, we will verify your identity using a "biometric"
+            sign-in system based on <a target="_blank" href="http://en.wikipedia.org/wiki/Keystroke_dynamics">keystroke dynamics</a>.
+            Every person has a unique typing pattern that can be used to identify them.
+            The computer detects the unique pattern that you use to press keys.
+        </p>
     </div>
     <div class="span8">
+        <h2 class="big-instructions">Instructions</h2>
         <ol>
-        <li>Record your pattern {{=requiredRecordings}} times to setup your profile. Try to type normally and accurately.</li>
-        <li>Accept more HITs to try signing in with your pattern.</li>
+            <li>Record your typing pattern {{=requiredRecordings}} times to train the system.</li>
+            <li>Try to type normally and accurately.</li>
         </ol>
         <p><em>Note: The phrase below has been selected for you. You do not need to remember it.</em></p>
     </div>

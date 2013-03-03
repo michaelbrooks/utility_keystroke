@@ -5,26 +5,13 @@
     <h2>Welcome!</h2>
     <p>This University of Washington research study has two phases:</p>
 
-    <p>First hit (${{=request.enrollPrice}}): Train system to recognize your
-    typing pattern (by typing a phrase 6 times).</p>
+    <ol>
+    <li><p>First HIT (${{=request.enrollPrice}}): Register and train system to recognize
+    typing pattern (by typing a phrase 6 times).</p></li>
 
-    <p>Next 50 hits (${{=request.verifyPrice}} each):
-    Verify your identity (by typing a phrase once).</p>
-
-<!-- Mbrooks version
-        <p>
-            This HIT is part of a research study about authentication of computer systems. Scroll down for details.
-        </p>
-        <p>
-            To start participating, complete a HIT in this group. During the <strong>first HIT</strong>, 
-            you will create a temporary user account solely for use on these HITs.
-        </p>
-        <p>
-            To complete <strong>additional HITs</strong> after the first one, you will be asked to log in 
-            to the account you created. You may complete as many additional HITs as you wish.
-            You will receive payment for each one.
-        </p>
--->
+    <li><p>Next hits (${{=request.verifyPrice}} each, up to 50 times):
+    Answer questions about your mood and emotions.</p></li>
+    </ol>
         {{if request.preview:}}
             <div class="btn btn-large disabled" disabled="disabled">Get started</div>
         {{else:}}
