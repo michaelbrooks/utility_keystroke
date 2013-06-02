@@ -101,14 +101,14 @@
     float: right;
     padding: 10px;
     margin-top: -5px;
+    margin-bottom: 5px;
     border-radius: 5px; 
     -moz-border-radius: 5px; 
     -webkit-border-radius: 5px;
     background-color: #C0F3C4;
 }
-#price-display h2 {
-    line-height: 1em;
-    text-align: right
+#price-display h1 {
+    margin-bottom: 5px;
 }
 
 .preview-banner {

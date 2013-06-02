@@ -64,7 +64,7 @@ if session.flashType:
     response.flashType = session.flashType
     session.flashType = None
 
-response.session = session
+# response.session = session
 response.title = "Mood Study"
 
 verificationAnswers = [
@@ -733,12 +733,13 @@ def get_mood_form(param):
 def get_free_write_form(param):
     form = FORM(
         DIV(
-            P("In the box below, please write a paragraph of about 3 lines in a stream-of-consciousness style."),
+            P("In the box below, please write a paragraph of about 50 words in a stream-of-consciousness style."),
             UL(
-                LI("Start with whatever your mind thinks of first. It doesn't matter what it is."),
+                LI("Write about whatever your mind thinks of first."),
                 LI("Don't worry about grammar or structure."),
                 LI("Allow your thoughts to drift freely."),
-                LI("Don't edit what you've written.")
+                LI("Don't edit what you've written."),
+                LI("Don't copy and paste.")
             ),
             _class="instructions"),
         INPUT(_name="time", _type="hidden"),

@@ -75,7 +75,7 @@
                 {{if request.preview: }}
                     <h1>Pays bonus</h1>
                 {{elif response.isEnrollment: }}
-                    <h1>Pays in Bonus</h1><br>
+                    <h1>Pays in Bonus</h1>
 		    initial setup hit: <span class="pay">${{=request.enrollPrice}}</span><br>
                     each hit thereafter: <span class="pay">${{=request.verifyPrice}}</span>
                 {{else:}}
@@ -171,7 +171,7 @@
                     <h3>You accepted multiple hits. You can only complete <br/>one HIT at a time.</h3>
                 </div>
                 <div class="modal-body">
-                    <a href="{{=URL(vars=request.get_vars)}}&unblock=1" class="btn btn-warning btn-large">Switch to this HIT and reset any progress in others.</a>
+                    <a href="{{=URL(vars=request.get_vars)}}&unblock=1" class="btn btn-warning btn-large">Switch to this HIT and reset others.</a>
                 </div>
             </div>
         </div>

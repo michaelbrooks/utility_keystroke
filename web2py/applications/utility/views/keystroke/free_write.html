@@ -16,7 +16,7 @@
     <script type="text/javascript">
         var start_time = null;
         var stop_time = null;
-        
+        var REQUIRED_WORDS = 50;
         var checkmark = $('#free-write-form .checkmark');
         var submitButton = $('#submit');
         var inputBox = $('#free-write-box');
@@ -27,8 +27,8 @@
             }
             stop_time = new Date();
             
-            var count = $(this).val().split(' ');
-            if (count.length > 60) {
+            var count = $.trim($(this).val()).split(/\s+/);
+            if (count.length > REQUIRED_WORDS) {
                 checkmark.addClass('in');
                 submitButton.removeAttr('disabled');
             } else {
@@ -48,8 +48,8 @@
     
         $("#free-write-form").submit(function(event) {
             
-            var count = inputBox.val().split(' ');
-            if (count.length < 60) {
+            var count = $.trim($(this).val()).split(/\s+/);
+            if (count.length > REQUIRED_WORDS) {
                 validation_error('Please write more text.');
                 event.preventDefault();
                 return false;
