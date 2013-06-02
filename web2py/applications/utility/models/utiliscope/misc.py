@@ -93,9 +93,12 @@ def print_hits():
         for h in study.hits.select():
             print '   ', h.launch_date, h.status, h.hitid, h.price, h.othervars
 
-def print_studies():
+def print_studies(more=False):
     for study in db().select(db.studies.ALL, orderby=db.studies.id):
-        print '%d\t%d\t%s' % (study.id, db(db.hits.study == study).count(), study.name)
+        print '%d\t%d\t%s%s' % (study.id,
+                                db(db.hits.study == study).count(),
+                                study.name,
+                                '\t' + study.description if more else '')
 
 
 def open_hits():
@@ -129,15 +132,29 @@ def cancel_unlaunched_hits():
 
 
 # ============== Experimental Conditions =============
+def available_conditions(study):
+    conds = [sj.loads(db.conditions[x.condition].json)
+             for x in
+             db(db.actions.study == study) \
+                 .select(db.actions.condition, distinct=True)]
+
+    conds = [c for c in conds if c]
+
+    vars = experimental_vars(study)
+    conds = sorted(conds, key=
+                   lambda c: [c['price']] + [c[v] for v in vars if v != 'price'])
+    return [get_condition(x) for x in conds]
+
 def experimental_vars(study):
     conditions = sj.loads(study.conditions)
     vars = conditions.keys()
-    return [x for x in vars if len(conditions[x]) > 1]
+    return [x for x in vars
+            if isinstance(conditions[x], (list, tuple))]
 
 def experimental_vars_vals(study):
     conditions = sj.loads(study.conditions)
     for k,v in conditions.items():
-        if len(v) < 2:
+        if not isinstance(v, (list, tuple)):
             del conditions[k]
         else:
             conditions[k] = sorted(v)

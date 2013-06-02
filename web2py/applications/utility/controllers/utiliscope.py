@@ -216,11 +216,25 @@ def error():
 ############################################################
 
 def dash():
-    return dict(theme='black')
+    workers = db.scheduler_worker.all()
+    tasks = db.scheduler_task.all()
+    max_heartbeat = max([(now - w.last_heartbeat).total_seconds()
+                         for w in workers])
+
+    red = '<span class="red">%s!!</span>'
+
+    status = 'OK'
+    if sqlitep: status = 'Disabled (sqlite mode)'
+    elif len(tasks) < 4: status = red % 'MISSING TASKS'
+    elif len(workers) < 3: status = red % 'MISSING WORKERS'
+    elif max_heartbeat > 10: status = red % 'NOT RUNNING'
+
+    return dict(theme='black',
+                worker_stats=Storage(count=len(workers), status=status))
 def amazon_health():
     rate = int((1.0-turk.error_rate()) * 10)
     if rate <= 8:
-        rate = '<span style="font-size: 300px; font-weight:bold; color: #f00;">%s</span>' % rate
+        rate = '<span class="bigred">%s</span>' % rate
     return rate
 def add_log_blanks():
     debug('')
@@ -397,6 +411,28 @@ def dolores():
                 available_prices=available_prices(study),
                 conditions=available_conditions(study)
                 )
+
+
+def stats():
+    study = db.studies(request.args[0])
+    ignored = []
+    if 'bad_workers' in globals(): ignored = bad_workers
+    return dict(study=study,
+                num_workers=len(db(db.actions.study==study).select(db.actions.workerid,distinct=True)),
+                stats = study_stats(study, ignored),
+                work_rates = study_work_rates(study, ignored))
+
+def study_csv():
+    study = db.studies(request.args[0])
+    dir = 'applications/utility/static/' + study.task
+    try: os.mkdir(dir)          # Make sure directory exists
+    except OSError as e: pass
+
+    fullpath = '%s/study_%d.csv' % (dir, study.id)
+    study_runs_csv(study, fullpath)
+
+    return '<a href="/static/%s/study_%d.csv">Study %d data as CSV</a>' \
+        % (study.task, study.id, study.id)
 
 def view():
     '''

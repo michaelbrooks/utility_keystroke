@@ -5,7 +5,9 @@ def scheduler_errors(N=10):
     for error in errors:
         print error.id, db.scheduler_task[error.scheduler_task].task_name, error.traceback
 def clear_scheduler_errors():
-    db(db.scheduler_run.status=='FAILED').delete(); db.commit()
+    db(db.scheduler_run.status=='FAILED').delete()
+    db(db.scheduler_task.status=='FAILED').delete()
+    db.commit()
 def open_scheduler_tasks(task_name=None):
     query = db.scheduler_task.status.belongs(('QUEUED',
                                               'ASSIGNED',
@@ -15,9 +17,9 @@ def open_scheduler_tasks(task_name=None):
         query &= db.scheduler_task.task_name == task_name
     return db(query).select()
 def log_scheduler_errors(f):
-    def wrapper():
+    def wrapper(*args, **kwargs):
         try:
-            f()
+            f(*args, **kwargs)
         except Exception as e:
             debug_t('Error in %s! %s\nRun scheduler_errors() for more info' % (f.__name__,e))
             raise
@@ -26,13 +28,13 @@ def log_scheduler_errors(f):
 
 # ============== Task Definitions =============
 @log_scheduler_errors
-def send_email_task(to, subject, message):
+def send_email(to, subject, message):
     debug_t('Sending email now from within the scheduler!')
     if True:   # Use sendmail
         SENDMAIL = "/usr/sbin/sendmail" # sendmail location
         import os
         p = os.popen("%s -t" % SENDMAIL, "w")
-        p.write("To: " + email_address + "\n")
+        p.write("To: " + to + "\n")
         p.write("Subject: " + subject + "\n")
         p.write("\n") # blank line separating headers from body
         p.write(message)
@@ -50,6 +52,12 @@ def send_email_task(to, subject, message):
         mail.settings.login = 'mturk@utiliscope.net:byebyesky'
         mail.send(to, subject, message)
     debug_t('Sent!')
+
+
+# Initial Setup, Periodic Maintenance
+@log_scheduler_errors
+def periodic_maintenance():
+    setup_db()
 
 
 @log_scheduler_errors
@@ -91,11 +99,22 @@ def refresh_hit_status():
         debug_t('MTurk API went bogus for refreshing %s/%s hits',
                 len(failed_refreshes), len(hits))
 
+
 # ============== Approving Hits and Paying People Bonus =============
 @log_scheduler_errors
 def process_bonus_queue():
     try:
         for row in db().select(db.bonus_queue.ALL):
+            # Skip workers that we aren't ready for yet
+            #debug_t('Checking for bonus_delay.')
+            if 'bonus_delay' in globals() and bonus_delay:
+                action = db.actions(assid=row.assid, action='finished')
+                if not action:
+                    logger_t.error('No finish action on bonus %s' % row.assid);
+                elif (datetime.now() - action.time).total_seconds() < bonus_delay:
+                    #logger_t.debug('Not %s minutes yet for assid %s', bonus_delay/60, row.assid)
+                    continue
+
             #debug_t('Processing bonus queue row %s' % row.id)
             try:
                 approve_and_bonus_up_to(row.hitid, row.assid, row.worker, float(row.amount), row.reason)
@@ -247,7 +266,8 @@ def launch_hit(hit):
                                  params.lifetime,
                                  params.assignments,
                                  params.reward,
-                                 params.tag)
+                                 params.tag,
+                                 params.block_india)
 
         hitid = turk.get(result, 'HITId')
         if not hitid: raise TurkAPIError('LOST A HIT! This shouldn\'t happen! check this out.')
@@ -276,7 +296,8 @@ mystery_task_params = Storage(
          'lifetime' : hit_lifetime,
          'assignments' : 1,
          'reward' : 0.0,
-         'tag' : None})
+         'tag' : None,
+         'block_india' : True})
 
 
 # ============== Junk Code (will delete soon) =============

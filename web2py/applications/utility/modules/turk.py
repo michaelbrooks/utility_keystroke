@@ -238,7 +238,7 @@ def get_all_hits ():
     return get_all_pages('SearchHITs')
 
 recent_hits = []
-def load_recent_hits(num_pages):
+def load_recent_hits():
     next_page = 1 + len(recent_hits)/100
     recent_hits.extend(get_page('SearchHITs', next_page))
     print "You've now loaded %s hits, dating back to %s" \
@@ -253,7 +253,9 @@ def get_reviewable_hit_ids ():
 
 def get_assignments_for_hit(hitid):
     data = ask_turk('GetAssignmentsForHIT', {
-        'HITId' : hitid})
+        'HITId' : hitid,
+        'PageSize': 30
+    })
     return getsx(data, 'Assignment')
 
 def get_worker_answers(hitid):
