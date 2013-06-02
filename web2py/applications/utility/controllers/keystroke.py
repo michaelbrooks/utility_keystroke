@@ -45,9 +45,18 @@ messages = dict(
     verifyInstructions = "keystroke", # Options: keystroke
 )
 
+def set_message(message, type):
+    print message, type
+    if message is not None:
+        response.flash = message
+        response.flashType = type
+
 def get_message(msgName):
+    if request.message_length == 'none':
+        return " "
+
     msg = messages[request.message_length][msgName]
-    if request.yell:
+    if request.message_size == 'large':
         msg = msg.upper()
     return msg
 
@@ -313,25 +322,10 @@ association_list = [
 ]
 
 moodTerms = [
-    ('lively', 'm_lively'),
-    ('drowsy', 'm_drowsy'),
     ('happy', 'm_happy'),
-    ('grouchy', 'm_grouchy'),
-        
     ('sad', 'm_sad'),
-    ('peppy', 'm_peppy'),
-    ('tired', 'm_tired'),
-    ('nervous', 'm_nervous'),
-        
-    ('caring', 'm_caring'),
-    ('calm', 'm_calm'),
-    ('content', 'm_content'),
-    ('loving', 'm_loving'),
-        
-    ('gloomy', 'm_gloomy'),
-    ('fed up', 'm_fedup'),
-    ('jittery', 'm_jittery'),
-    ('active', 'm_active'),
+    ('lively', 'm_lively'),
+    ('drowsy', 'm_drowsy')
 ]
 
 hit_session = None
@@ -439,8 +433,7 @@ def enroll(param):
     #validate the recording if it is set
     if form.process(onsuccess=None, onfailure=None).accepted and validate(request.vars.typing, request.vars.text, form):
         record_action('user recorded', request.vars.typing)
-        response.flash = get_message('recordSuccess')
-        response.flashType = "success"
+        set_message(get_message('recordSuccess'), 'success')
         hit_session.successfulRecordings += 1
     elif form.errors:
         record_action('invalid: record', form.errors)
@@ -533,14 +526,14 @@ def verify(param):
             #if they were authenticated, go on to questionnaire
             record_action('user authorized', request.vars.typing)
             hit_session.next_step = 'mood_test'
-            session.flash = get_message('verifySuccess')
-            session.flashType = "success"
+            set_message(get_message('verifySuccess'), 'success')
             # Go home and try again
             redirect(URL(f='index', vars=request.get_vars))
         else:
             # Not authorized so show a denied error
             record_action('user denied', request.vars.typing)
-            form.errors = dict(text=get_message('verifyError'))
+            set_message(get_message('verifyError'), 'error')
+            #form.errors = dict(text=get_message('verifyError'))
             
     elif form.errors:
         # Invalid verification attempt
@@ -712,7 +705,7 @@ def get_mood_form(param):
         DIV(
             "Adjust the sliders below to indicate how well each word describes your present mood:",
             BR(),
-            I("Note: you must adjust each slider."),
+            #I("Note: you must adjust each slider."),
             _class="instructions"),
         _id="mood-form", _class="questions well clearfix")
 
@@ -722,11 +715,16 @@ def get_mood_form(param):
         # DIV("Definitely do not feel", _class="right"),
         # _class="legend clearfix"))
     
-    for name, key in moodTerms:
+    moodItems = moodTerms
+    random.shuffle(moodItems)
+    for name, key in moodItems:
         form.append(get_mood_item(name, 'not ' + name, key))
     
-    form.append(DIV(
-                    INPUT(_type="submit",_name='submit', _id='submit', _value="Next Page", _class="btn btn-primary btn-large"),
+    form.append(P("Overall, my mood is:"))
+    
+    form.append(get_mood_item("Very Pleasant", "Very Unpleasant", "m_overall"))
+    
+    form.append(DIV(INPUT(_type="submit",_name='submit', _id='submit', _value="Next Page", _class="btn btn-primary btn-large"),
                     _class="form-footer"))
     
     return form
@@ -864,7 +862,7 @@ def get_register_form(param):
     incomeItem = form_item("What is your total annual household income in US dollars? (required)", incomeInputs)
     
     moodInputs = [
-        LABEL(INPUT(_type="radio", _name="mood", _value='0', _id="mood-no", requires=IS_NOT_EMPTY(error_message="You must answer the question about mood disorder history.")),
+        LABEL(INPUT(_type="radio", _name="mood", _value='0', _id="mood-no", requires=IS_NOT_EMPTY(error_message="You must answer the question about mood history.")),
             'No',
             _for="mood-no", _class="radio"),
         LABEL(INPUT(_type="radio", _name="mood", _value='1', _id="mood-yes"),
@@ -874,7 +872,7 @@ def get_register_form(param):
             'Decline to answer',
             _for="mood-null", _class="radio"),
     ]
-    moodItem = form_item("Have you every been diagnosed with a mood disorder or been prescribed mood stabilizing medication?", moodInputs)
+    moodItem = form_item("Have you every been diagnosed with a mood disorder or been prescribed mood stabilizing medication? (required)", moodInputs)
     
     biometricInputs = [
         LABEL(INPUT(_type="checkbox", _name="biometric", _value='fingerprint', _id="biometric-fingerprint", requires=IS_NOT_EMPTY(error_message="You must answer the question about identification systems.")),
@@ -919,7 +917,7 @@ def get_register_form(param):
     return form
             
 def submit_button(name, disabled=False):
-    btn = INPUT(_type="submit",_name=name, _value="Submit HIT", _class="btn btn-primary btn-large")
+    btn = INPUT(_type="submit",_name=name, _id=name, _value="Submit HIT", _class="btn btn-primary btn-large")
     if disabled:
         btn['_disabled'] = 'disabled'
         
@@ -1047,7 +1045,9 @@ def auth_form(instructions, keyphrase):
     
 def validate(typing, text, form):
     if not typing or not text:
-        form.errors['text'] = get_message('validateNotTyped')
+        set_message(get_message('validateNotTyped'), 'error')
+        record_action('no typing provided')
+        #form.errors['text'] = get_message('validateNotTyped')
         return False
 
     typing = gluon.contrib.simplejson.loads(typing)
@@ -1062,11 +1062,13 @@ def validate(typing, text, form):
     valid = True
 
     if len(text) * 2 > len(typing):
-        form.errors['text'] = get_message('validateNotTyped')
+        set_message(get_message('validateNotTyped'), 'error')
+        #form.errors['text'] = get_message('validateNotTyped')
         record_action('insufficient keypresses', len(typing))
         valid = False
     elif typos > MAX_TYPOS:
-        form.errors['text'] = get_message('validateTypos')
+        set_message(get_message('validateTypos'), 'error')
+        #form.errors['text'] = get_message('validateTypos')
         record_action('too many typos', typos)
         valid = False
     else:
@@ -1074,11 +1076,13 @@ def validate(typing, text, form):
         press_stats = statistics(presses)
 
         if not validStats(seek_stats):
-            form.errors['text'] = get_message('validateStats')
+            set_message(get_message('validateStats'), 'error')
+            #form.errors['text'] = get_message('validateStats')
             record_action('invalid seek_stats', seek_stats)
             valid = False
         elif not validStats(press_stats):
-            form.errors['text'] = get_message('validateStats')
+            set_message(get_message('validateStats'), 'success')
+            #form.errors['text'] = get_message('validateStats')
             record_action('invalid press_stats', press_stats)
             valid = False
 

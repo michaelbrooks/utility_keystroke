@@ -2,9 +2,9 @@
 options.keystroke = {
     'price' : [0.01, 0.02],
     'reject_chance': [0.00, 0.05, 0.10, 0.33, 0.66, 1],
-    'delay_time': [0.1, 2, 5],
-    'message_length': ['terse', 'medium', 'verbose'],
-    'yell' : [1, 0],
+    'delay_time': [0.1, 3, 10],
+    'message_length': ['terse', 'medium', 'verbose', 'none'],
+    'message_size' : ['small', 'medium', 'large'],
     'work_limit' : 51,
     'mystery_task' : True
     }

@@ -1,9 +1,12 @@
 #auth-form {
     position: relative;
+    margin: 0;
 }
 
 .auth-box {
     margin-top: 20px;
+    position:relative;
+    margin-bottom: 20px;
 }
 
 #auth-form .loading {
@@ -168,6 +171,11 @@
     color: red;
     background-color: #070053;
 }
+.alert-success.alert-ugly {
+    border-color: green;
+    color: green;
+    background-color: #fff;
+}
 
 #mood-form .instructions {
     margin: 10px 0 20px 0;
@@ -286,4 +294,36 @@
     height: 34px;
     text-align: center;
     width: 300px;
+}
+/*
+.error-box {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+.error-box .alert {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    z-index: 100;
+    text-align: center;
+    font-size: 25px;
+    font-weight: bold;
+    line-height: 30px;
+}*/
+.error-box .alert {
+    font-weight: bold;
+}
+
+.error-box .alert.size-small {
+    font-size: 10px;
+    line-height: 12px;
+    padding: 4px 15px 4px 7px
+}
+.error-box .alert.size-large {
+    font-size: 20px;
+    line-height: 23px;
 }

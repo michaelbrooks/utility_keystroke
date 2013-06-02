@@ -671,6 +671,7 @@ def load_live_hit():
     log('Loading a live hit!')
     if request.vars.live == None: raise Exception('not live')
     if not (request.hitid and db.hits(hitid=request.hitid)):
+        turk.expire_hit(request.hitid)
         raise Exception("This hit %s does not exist in utiliscope database!"
                         % request.hitid)
 
