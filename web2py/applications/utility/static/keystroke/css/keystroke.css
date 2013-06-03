@@ -248,9 +248,9 @@
 
 #free-write-box {
     display: block;
-    margin: 60px auto 60px auto;
+    margin: 30px auto 60px auto;
     width: 700px;
-    height: 150px;
+    height: 100px;
 }
 
 .form-footer {

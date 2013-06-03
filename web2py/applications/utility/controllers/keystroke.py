@@ -741,6 +741,7 @@ def get_free_write_form(param):
                 LI("Don't edit what you've written."),
                 LI("Don't copy and paste.")
             ),
+            P("This will be used to help assess your current mood. Thank you!"),
             _class="instructions"),
         INPUT(_name="time", _type="hidden"),
         TEXTAREA(_name="text", _id="free-write-box", requires=IS_NOT_EMPTY(error_message="You must submit some writing")),
@@ -925,7 +926,7 @@ def submit_button(name, disabled=False):
     return DIV(
         btn,
         BR(),
-        SPAN("You may complete as many additional HITs in this group as you want.", _class="reminder-text")
+        SPAN("You may complete up to ", request.work_limit - 1, " HITs in this group.", _class="reminder-text")
     )
 
 def uniquify(seq):
