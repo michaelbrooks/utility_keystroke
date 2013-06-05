@@ -328,8 +328,8 @@ association_list = [
 moodTerms = [
     ('happy', 'm_happy'),
     ('sad', 'm_sad'),
-    ('lively', 'm_lively'),
-    ('drowsy', 'm_drowsy')
+    ('frustrated', 'm_frustrated'),
+    ('satisfied', 'm_satisfied')
 ]
 
 hit_session = None
