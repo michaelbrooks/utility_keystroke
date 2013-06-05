@@ -121,6 +121,9 @@ def record_post_survey():
     m_jittery = hit_session.mood_form.m_jittery
     m_active = hit_session.mood_form.m_active
     
+    m_frustrated = hit_session.mood_form.m_frustrated
+    m_satisfied = hit_session.mood_form.m_satisfied
+    
     m_overall = hit_session.mood_form.m_overall
     
     free_write_text = hit_session.free_write_text
@@ -153,6 +156,8 @@ def record_post_survey():
                     m_fedup=m_fedup,
                     m_jittery=m_jittery,
                     m_active=m_active,
+                    m_frustrated=m_frustrated,
+                    m_satisfied=m_satisfied,
                     m_overall=m_overall,
                     free_write_text=free_write_text,
                     free_write_time=free_write_time,
