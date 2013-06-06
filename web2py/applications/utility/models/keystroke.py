@@ -57,6 +57,7 @@ db.define_table('ks_post_surveys',
                 db.Field('m_frustrated', 'double'),
                 db.Field('m_satisfied', 'double'),
 				db.Field('m_overall', 'double'),
+                db.Field('mood_time', 'double'),
 				db.Field('free_write_text', 'text'),
                 db.Field('free_write_time', 'double'),
 				db.Field('associations', 'text'),
@@ -126,6 +127,8 @@ def record_post_survey():
     
     m_overall = hit_session.mood_form.m_overall
     
+    mood_time = hit_session.mood_form.mood_time
+    
     free_write_text = hit_session.free_write_text
     free_write_time = hit_session.free_write_time
     associations = hit_session.associations
@@ -159,6 +162,7 @@ def record_post_survey():
                     m_frustrated=m_frustrated,
                     m_satisfied=m_satisfied,
                     m_overall=m_overall,
+                    mood_time=mood_time,
                     free_write_text=free_write_text,
                     free_write_time=free_write_time,
                     associations=associations,
@@ -225,7 +229,7 @@ def export_post_surveys(stream, study):
     header = ['id', 'run_length', 'start_time', 'end_time', 'workerid', 'censored', 'other']
     header += variables
     header += ['time', 'survey_number', 'attempts', 'duration', 
-        'm_lively', 'm_drowsy', 'm_happy', 'm_sad', 'm_overall',
+        'm_frustrated', 'm_satisfied', 'm_happy', 'm_sad', 'm_overall', 'mood_time',
         'free_write_text', 'free_write_time', 'associations', 'association_times']
     
     writer.writerow(header)
@@ -246,7 +250,7 @@ def export_post_surveys(stream, study):
         vals = ([run.id, run.length, run.start_time, run.end_time, run.workerid, run.censored, run.other] 
                 + [condition[key] for key in variables]
                 + [ps.time, ps.completed, ps.attempts, ps.duration, 
-                    ps.m_lively, ps.m_drowsy, ps.m_happy, ps.m_sad, ps.m_overall,
+                    ps.m_frustrated, ps.m_satisfied, ps.m_happy, ps.m_sad, ps.m_overall, ps.mood_time,
                     ps.free_write_text, ps.free_write_time, ps.associations, ps.association_times])
         writer.writerow(vals)
     

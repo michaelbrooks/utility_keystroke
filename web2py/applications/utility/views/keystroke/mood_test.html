@@ -18,6 +18,7 @@
         var sliderMin = 0;
         var fontMin = 10;
         var fontMax = 24;
+        var startTime = null;
         
         /*
          * Converts a slider value (0 to 100) to the range 0 to 1,
@@ -44,6 +45,9 @@
                 var moodItem = $(this).parent();
                 var id = moodItem.attr('id');
                 
+                //Record the time
+                startTime = new Date();
+                
                 //Make sure the checkmark is visible
                 moodItem.find('.checkmark').addClass('in');
                 
@@ -63,7 +67,7 @@
         $("#mood-form").submit(function(event) {
             
             var incomplete = false;
-            $('#mood-form input').each(function() {
+            $('#mood-form input.mood-input').each(function() {
                 if ($(this).val() === '') {
                     incomplete = true;
                 }
@@ -74,6 +78,10 @@
                 event.preventDefault();
                 return false;
             }
+            
+            //Record the time taken
+            var timeTaken = new Date() - startTime;
+            $('#mood-time').val(timeTaken / 1000);
             
             /*var animal = $(":radio[name=verify]:checked", this);
             if (!frustration.length || !animal.length) {

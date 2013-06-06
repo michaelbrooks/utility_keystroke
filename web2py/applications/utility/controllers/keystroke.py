@@ -699,13 +699,14 @@ def get_mood_item(labelText, reverseLabelText, name):
         DIV(labelText, _class="positive mood-label"),
         DIV(_class="slider"),
         DIV(reverseLabelText, _class="negative mood-label"),
-        INPUT(_name=name, _type="hidden"),
+        INPUT(_name=name, _type="hidden", _class="mood-input"),
         _class="mood item clearfix", _id=name)
         
 # Get the mood test questionnaire
 def get_mood_form(param):
     
     form = FORM(
+        INPUT(_type='hidden', _name='mood_time', _id='mood-time'),
         DIV(
             "Adjust the sliders below to indicate how well each word describes your present mood:",
             BR(),
