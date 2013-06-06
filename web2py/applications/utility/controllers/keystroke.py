@@ -45,10 +45,10 @@ messages = dict(
     verifyInstructions = "keystroke", # Options: keystroke
 )
 
-def set_message(message, type, session=False):
+def set_message(message, type, useSession=False):
     print message, type
     if message is not None:
-        if session:
+        if useSession:
             session.flash = message
             session.flashType = type
         else:
@@ -530,7 +530,7 @@ def verify(param):
             #if they were authenticated, go on to questionnaire
             record_action('user authorized', request.vars.typing)
             hit_session.next_step = 'mood_test'
-            set_message(get_message('verifySuccess'), 'success', session=True)
+            set_message(get_message('verifySuccess'), 'success', useSession=True)
             # Go home and try again
             redirect(URL(f='index', vars=request.get_vars))
         else:
