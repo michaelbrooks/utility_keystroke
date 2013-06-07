@@ -409,7 +409,7 @@ def check_daemon(task_name, period=4):
             db.rollback()
 
 check_daemon('process_launch_queue')
-check_daemon('refresh_hit_status')
+check_daemon('refresh_hit_status', 120)
 check_daemon('process_bonus_queue')
 check_daemon('periodic_maintenance', 60 * 60 * 24) # Run once a day
 #check_daemon('process_tickets', 30)
