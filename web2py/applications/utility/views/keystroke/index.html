@@ -6,9 +6,9 @@
     <p>This University of Washington research study has two phases:</p>
 
     <ol>
-    <li><p>First HIT (${{=request.enrollPrice}}): Sign up for study.</p></li>
+    <li><p>First HIT (${{='%.2f'%request.enrollPrice}}): Sign up for study.</p></li>
 
-    <li><p>Next hits (${{=request.verifyPrice}} each, up to 50 times):
+    <li><p>Next hits (${{='%.2f'%request.verifyPrice}} each, up to 50 times):
     Answer questions about your mood and emotions.</p></li>
     </ol>
     

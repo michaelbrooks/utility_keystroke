@@ -76,10 +76,10 @@
                     <h1>Pays bonus</h1>
                 {{elif response.isEnrollment: }}
                     <h1>Pays in Bonus</h1>
-		    initial setup hit: <span class="pay">${{=request.enrollPrice}}</span><br>
-                    each hit thereafter: <span class="pay">${{=request.verifyPrice}}</span>
+		    initial setup hit: <span class="pay">${{='%.2f'%request.enrollPrice}}</span><br>
+                    each hit thereafter: <span class="pay">${{='%.2f'%request.verifyPrice}}</span>
                 {{else:}}
-                    <h1>Bonus: ${{=request.price}}</h1>
+                    <h1>Bonus: ${{='%.2f'%request.price}}</h1>
                 {{pass}}
                 </div>
             {{pass}}

@@ -725,24 +725,29 @@ def populate_runs(study):
                           &(db.actions.study == study)) \
                           .select(orderby=db.actions.time,
                                   limitby=(0,1))[0]
+
+        censored = 0 < db((db.actions.action=='work quota reached')
+                          & (db.actions.workerid == worker)
+                          & (db.actions.study == study)).count()
+
         run = Storage(workerid=worker,
                       length=len(finishes),
                       study=study,
                       start_time=first_accept.time,
                       end_time=((finishes.last() and finishes.last().time)
                                 or first_accept.time),
-                      condition=first_accept.condition)
+                      condition=first_accept.condition,
+                      censored=censored)
 
         # Write out the run
         db.runs.insert(**run)
 
-    # Now clear all censored flags, and then mark the last ones as censored
-    db((db.runs.study==study)&(db.runs.censored==True)).update(censored=False)
+    # Now mark the last runs as censored
     db((db.runs.study==study)
        &(db.runs.end_time > 
-         db().select(db.runs.end_time,
-                     orderby=~db.runs.end_time,
-                     limitby=(0,1)).first().end_time
+         db(db.runs.study==study).select(db.runs.end_time,
+                                         orderby=~db.runs.end_time,
+                                         limitby=(0,1)).first().end_time
          - gap_size())).update(censored=True)
 
     db.commit()

@@ -2,7 +2,7 @@ import csv
 import gluon.contrib.simplejson as json
 
 options.keystroke = {
-    'price' : [0.03, 0.05],
+    'price' : [0.05, 0.10, 0.20],
     'reject_chance': [0.00, 0.05, 0.10, 0.33, 0.66],
     'delay_time': [0.1, 3, 10],
     'message_length': ['terse', 'medium', 'verbose'],
@@ -254,3 +254,9 @@ def export_post_surveys(stream, study):
                     ps.free_write_text, ps.free_write_time, ps.associations, ps.association_times])
         writer.writerow(vals)
     
+
+def process_keystroke_runs(study):
+    db((db.runs.study==study)
+       & (db.runs.length==0)).delete()
+    db(db.runs.study==study).update(length=db.runs.length-1)
+    db.commit()
